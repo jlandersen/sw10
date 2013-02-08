@@ -1,0 +1,38 @@
+% *****************************************
+% ::::::::::: Document Settings :::::::::::
+% *****************************************
+
+\input{Configuration/Layout.tex}
+\input{Configuration/Font.tex}
+
+% *****************************************
+% ::::::::::: Various  Packages :::::::::::
+% *****************************************
+\usepackage[table]{xcolor}
+\usepackage[english]{babel}
+\usepackage{algpseudocode}
+\usepackage[lined, boxed, linesnumbered]{algorithm2e}
+\usepackage{longtable}
+\usepackage{pdfpages}
+\usepackage{csquotes}
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{\leftmark}
+\cfoot{Page \thepage\ of \pageref{LastPage}}
+
+% *****************************************
+% :::::::: Various  Configurations ::::::::
+% *****************************************
+
+% Bibtex
+\usepackage[authoryear]{natbib}
+\bibliographystyle{abbrv}
+
+% Custom commands
+\input{Configuration/CustomCommands.tex}
+
+% *****************************************
+% :::::::: PDF SETTINGS ::::::::
+% *****************************************
+\input{Configuration/PdfSettings.tex}

@@ -1,0 +1,31 @@
+\input{Configuration/Preamble.tex}
+
+\begin{document}
+
+% Front page
+\includepdf[noautoscale]{Frontpage}
+\setlength{\parskip}{0mm}
+		
+		% Content
+		\input{Misc/Titlepage.tex}
+		\input{Misc/Preface.tex}
+		
+		\tableofcontents
+		
+		% Introduction
+		\input{Chapters/Introduction/Introduction.tex}
+		
+		% Reflection
+		\input{Chapters/Reflection/Reflection.tex}
+		% Future work
+		\input{Chapters/FutureWork/FutureWork.tex}
+		%Conclusion
+		\input{Chapters/Conclusion/Conclusion.tex}
+
+		\bibliography{Configuration/Literature}
+		\addcontentsline{toc}{chapter}{Bibliography}
+		
+		\appendix
+		\input{Appendix/Appendix.tex}
+
+\end{document}
