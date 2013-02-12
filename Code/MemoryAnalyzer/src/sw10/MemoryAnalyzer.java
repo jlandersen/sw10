@@ -2,6 +2,7 @@ package sw10;
 import java.io.IOException;
 import java.util.Iterator;
 
+import com.ibm.wala.cfg.CFGSanitizer;
 import com.ibm.wala.classLoader.Module;
 import com.ibm.wala.classLoader.ModuleEntry;
 import com.ibm.wala.core.tests.callGraph.CallGraphTestUtil;
@@ -24,41 +25,49 @@ import com.ibm.wala.ssa.IR;
 import com.ibm.wala.ssa.ISSABasicBlock;
 import com.ibm.wala.ssa.SSACFG;
 import com.ibm.wala.ssa.SSAInstruction;
+import com.ibm.wala.util.WalaException;
 import com.ibm.wala.util.config.AnalysisScopeReader;
-import com.ibm.wala.util.intset.IntSet;
+import com.ibm.wala.util.graph.Graph;
 import com.ibm.wala.util.io.FileProvider;
-
 
 public class MemoryAnalyzer {
 	
-	public static void main(String[] args) throws IOException, ClassHierarchyException, IllegalArgumentException, CallGraphBuilderCancelException {
-		// input
-		String application = "/Users/jeppe/Documents/workspace/Application.jar";
-		String main_class = "SimpleApplication";
+	public void analyze(String application, String mainClass) throws IOException, 
+																	 IllegalArgumentException, 
+																	 CallGraphBuilderCancelException, 
+																	 WalaException {
+		
 		AnalysisScope scope = createJavaAnalysisScope(application);
 	    ClassHierarchy cha = ClassHierarchy.make(scope);
-	    Iterable<Entrypoint> entrypoints = com.ibm.wala.ipa.callgraph.impl.Util.makeMainEntrypoints(scope, cha, "L"+main_class);
+	    Iterable<Entrypoint> entrypoints = com.ibm.wala.ipa.callgraph.impl.Util.makeMainEntrypoints(scope, cha, "L"+mainClass);
 	    AnalysisOptions options = new AnalysisOptions(scope, entrypoints);   
 	    options.setReflectionOptions(ReflectionOptions.NONE);
 	    
 	    com.ibm.wala.ipa.callgraph.CallGraphBuilder builder = ZeroXCFABuilder(options, new AnalysisCache(), cha, scope, null);
 	    CallGraph cg = builder.makeCallGraph(options, null);
-	    
-	    cg.getNumberOfTargets(null, null);
-	    
+	 
 	    int i = 0;
 	    Iterator<CGNode> it = cg.iterator();
 	    while(it.hasNext()) {
 	    	CGNode node = it.next();
-	    	
+	    
 	    	if (node.toString().contains("Primordial")) {
 	    		continue;
 	    	}
 	    	
 	    	System.out.println(node.toString());
+	    	Iterator<CGNode> succses = cg.getSuccNodes(node);
+	    	while(succses.hasNext()) {
+	    		CGNode succ = succses.next();
+	    		System.out.println("\tCG NODE SUCCESSOR:" + succ.toString());
+	    	}
+	    	
+	    	
 	    	IR ir = node.getIR();
+	    
 	    	
 	    	SSACFG cfg = ir.getControlFlowGraph();
+			Graph<ISSABasicBlock> sanitized = CFGSanitizer.sanitize(ir, cha);
 	    	
 	    	System.out.println(ir.getMethod().getName());
 	    	Iterator<ISSABasicBlock> block = cfg.iterator();
@@ -66,7 +75,6 @@ public class MemoryAnalyzer {
 	    		ISSABasicBlock bb = block.next();
 	    		System.out.println("\tBLOCK NAME:" + bb.toString());
 	    		System.out.println("\tBLOCK NUMBER:" + bb.getNumber());
-	    		//System.out.println("\tNUMBER OF SUCCESSORS " + ints.size());
 	    		
 	    		Iterator<SSAInstruction> inst = bb.iterator();
 	    		
@@ -86,6 +94,15 @@ public class MemoryAnalyzer {
 	    	System.out.println();
 	    	System.out.println();
 	    }
+	
+	}
+	
+	public static void main(String[] args) throws WalaException, IOException, ClassHierarchyException, IllegalArgumentException, CallGraphBuilderCancelException {
+		String application = "/Users/jeppe/Documents/workspace/Application.jar";
+		String main_class = "SimpleApplication";
+		
+		MemoryAnalyzer analyzser = new MemoryAnalyzer();
+		analyzser.analyze(application, main_class);
 	}
 	
 	public static AnalysisScope createJavaAnalysisScope(String application) throws IOException {
