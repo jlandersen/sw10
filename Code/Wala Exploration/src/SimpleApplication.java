@@ -1,9 +1,8 @@
-
 public class SimpleApplication {
-
+	
 	public void greetNumberOfTimes(int times) {
 		int x = 0;
-		while (x < times)  {
+		while (x < times)  { //@ loopbound = 17
 			System.out.println("Hello there!");
 			x++;
 		}
