@@ -1,10 +1,13 @@
 package sw10;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
+
+import analyser.ScjWorstCase;
 
 import com.ibm.wala.cfg.CFGSanitizer;
 import com.ibm.wala.classLoader.Module;
@@ -29,10 +32,12 @@ import com.ibm.wala.ipa.callgraph.propagation.cfa.ZeroXInstanceKeys;
 import com.ibm.wala.ipa.cha.ClassHierarchy;
 import com.ibm.wala.ipa.cha.ClassHierarchyException;
 import com.ibm.wala.properties.WalaProperties;
+import com.ibm.wala.shrikeCT.InvalidClassFileException;
 import com.ibm.wala.ssa.IR;
 import com.ibm.wala.ssa.ISSABasicBlock;
 import com.ibm.wala.ssa.SSACFG;
 import com.ibm.wala.ssa.SSAInstruction;
+import com.ibm.wala.util.CancelException;
 import com.ibm.wala.util.WalaException;
 import com.ibm.wala.util.config.AnalysisScopeReader;
 import com.ibm.wala.util.graph.Graph;
@@ -56,7 +61,8 @@ public class MemoryAnalyzer {
 	public void analyze(String application, String mainClass) throws IOException, 
 																	 IllegalArgumentException, 
 																	 CallGraphBuilderCancelException, 
-																	 WalaException {
+																	 WalaException, 
+																	 LpSolveException {
 		
 		AnalysisScope scope = createJavaAnalysisScope(application);
 	    cha = ClassHierarchy.make(scope);
@@ -89,8 +95,20 @@ public class MemoryAnalyzer {
 	    	SlowSparseNumberedLabeledGraph<ISSABasicBlock, String> sanitized = (SlowSparseNumberedLabeledGraph<ISSABasicBlock, String>)CFGSanitizer.sanitize(ir, cha);
 	    	System.out.println("Beginning BFS");
 	    	BFSIterator<ISSABasicBlock> iterator = new BFSIterator<ISSABasicBlock>(sanitized);
+	    	int numNewInstructions;
+	    	
 	    	while (iterator.hasNext()) {
+	    		numNewInstructions = 0;
 	    		ISSABasicBlock b = iterator.next();
+	    		
+	    		Iterator<SSAInstruction> instructionIterator = b.iterator();
+	    		while (instructionIterator.hasNext()) {
+	    			SSAInstruction inst = instructionIterator.next();
+	    			if (inst.toString().toUpperCase().contains("NEW")) {
+	    				numNewInstructions++;
+	    			}
+	    		}
+	    		
 	    		System.out.println("NODE ID " + b.getGraphNodeId() + ", TITLE " + b.toString());
 	    		
 	    		lpVen.setObjectiveFunction(LpFileCreator.ObjectiveFunction.MAX);
@@ -135,7 +153,7 @@ public class MemoryAnalyzer {
 	    			int edgeIndex = 0;
 	    			for (String incomingLabel : incoming) {
 	    				lhs.append(incomingLabel);
-	    				allocRhs.append("0 " + incomingLabel);
+	    				allocRhs.append(numNewInstructions + " " + incomingLabel);
 	    				
 	    				if (edgeIndex != incoming.size() - 1) {
 	    					lhs.append(" + ");
@@ -167,7 +185,9 @@ public class MemoryAnalyzer {
 	    	}
 	    	
 	    	lpVen.writeFile();
-	    	//OpenPDFGraphViewer();
+	    	LpSolve solver = LpSolve.readLp("application.lp", 1, null);
+	    	solver.solve();
+	    	System.out.println("LPSolve result: " + solver.getObjective());
 	    }
 	}
 	
@@ -242,12 +262,13 @@ public class MemoryAnalyzer {
 	}
 	
 	
-	public static void main(String[] args) throws WalaException, IOException, ClassHierarchyException, IllegalArgumentException, CallGraphBuilderCancelException {
-		String application = "/Users/jeppe/Documents/workspace/Application.jar";
-		String main_class = "SimpleApplication";
+	public static void main(String[] args) throws WalaException, IOException, ClassHierarchyException, IllegalArgumentException, LpSolveException, CancelException, InvalidClassFileException {
+		String application = "/Users/todberg/Documents/workspace/classes.jar";
+		String main_class = "SCJApplication";
 		
-		MemoryAnalyzer analyzser = new MemoryAnalyzer();
-		analyzser.analyze(application, main_class);
+		//MemoryAnalyzer analyzser = new MemoryAnalyzer();
+		//analyzser.analyze(application, main_class);
+		ScjWorstCase.buildPointsTo(application, null, main_class);
 	}
 	
 	public static AnalysisScope createJavaAnalysisScope(String application) throws IOException {
