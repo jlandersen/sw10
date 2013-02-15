@@ -264,7 +264,7 @@ public class MemoryAnalyzer {
 	
 	public static void main(String[] args) throws WalaException, IOException, ClassHierarchyException, IllegalArgumentException, LpSolveException, CancelException, InvalidClassFileException {
 		String application = "/Users/todberg/Documents/workspace/classes.jar";
-		String main_class = "SCJApplication";
+		String main_class = "system/SCJApplication";
 		
 		//MemoryAnalyzer analyzser = new MemoryAnalyzer();
 		//analyzser.analyze(application, main_class);
