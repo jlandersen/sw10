@@ -1,0 +1,16 @@
+typedef struct
+{
+int a;
+} myStructType;
+
+myStructType m;
+
+typedef int adr;
+
+adr n;
+
+adr n2 = 3;
+
+extern DBMClock;
+typedef DBMClock clock;
+clock c;
