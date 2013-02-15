@@ -12,7 +12,7 @@
 	<classpathentry kind="lib" path="/Applications/eclipse/plugins/org.eclipse.equinox.common_3.6.100.v20120522-1841.jar"/>
 	<classpathentry kind="lib" path="/Applications/eclipse/plugins/org.eclipse.jface_3.8.101.v20120817-083647.jar"/>
 	<classpathentry kind="lib" path="/Applications/eclipse/plugins/org.eclipse.core.runtime_3.8.0.v20120521-2346.jar"/>
-	<classpathentry kind="lib" path="/Users/Todberg/Documents/SW10/Code/juppaal/JUPPAAL.jar"/>
-	<classpathentry kind="lib" path="/Users/Todberg/Documents/SW10/Code/juppaal/libs/jdom.jar"/>
+	<classpathentry kind="lib" path="jdom.jar"/>
+	<classpathentry kind="lib" path="JUPPAAL.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
