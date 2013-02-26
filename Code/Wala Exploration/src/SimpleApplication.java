@@ -38,19 +38,14 @@ public class SimpleApplication {
 	
 	public static void main(String[] args) {
 		Object n;
-		for(int i = 0; i < 10; i++) {
+		for(int i = 0; i < 10; i++) { //@ loopbound = 10
 			n = new Object();
 			int y = 5;
 			
-			while( y == 2) {
+			while( y == 2) { //@ loopbound = 2
 				
 			}
 		}
-		
-		int x = 2;
-		do {
-			n = new Object();
-		} while (x < 5);
 	}
 
 }
