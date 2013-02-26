@@ -18,17 +18,39 @@ public class SimpleApplication {
 		System.out.println("Goodbye..");
 	}
 	
-	public static void main(String[] args) {
-		SimpleApplication application = new SimpleApplication();
-		
-		if (args != null) {
-			application = new SimpleApplication();
-		} else {
-			application = new SimpleApplication();
-			application = new SimpleApplication();
+	private static ILOL returnMe(int x) {
+		if (x == 2) {
+			return new TrivialObject();
+		} else if (x == 5) {
+			return new TrivialObject();
 		}
 		
-		application.greetNumberOfTimes(5);
+		return new SimpleObject();
+	}
+	
+	private static void m1() {
+		Object n = new Object();
+	}
+	
+	private static void m2() {
+		Object n = new Object();
+	}
+	
+	public static void main(String[] args) {
+		Object n;
+		for(int i = 0; i < 10; i++) {
+			n = new Object();
+			int y = 5;
+			
+			while( y == 2) {
+				
+			}
+		}
+		
+		int x = 2;
+		do {
+			n = new Object();
+		} while (x < 5);
 	}
 
 }
