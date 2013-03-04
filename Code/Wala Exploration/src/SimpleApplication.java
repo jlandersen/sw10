@@ -1,34 +1,19 @@
 public class SimpleApplication {
 	
-	public void greetNumberOfTimes(int times) {
-		int x = 0;
-		while (x < times)  { //@ loopbound = 17
-			System.out.println("Hello there!");
-			x++;
-		}
-		
-		Object h = new Object();
-		
-		goodbye();
-	}
-	
-	private void goodbye() {
-		Object k = new Object();
-		SimpleApplication hej = new SimpleApplication();
-		System.out.println("Goodbye..");
+	private static Object goodbye(int x) {
+		if(x > 0)
+			return new SimpleObject();
+		else
+			return new TrivialObject();
 	}
 	
 	public static void main(String[] args) {
-		SimpleApplication application = new SimpleApplication();
-		
-		if (args != null) {
-			application = new SimpleApplication();
+		Object obj = goodbye(5);
+		if(args[0].equals("hello")) {
+			obj = new Object();
 		} else {
-			application = new SimpleApplication();
-			application = new SimpleApplication();
+			obj = new TrivialObject();
+			obj = new TrivialObject();
 		}
-		
-		application.greetNumberOfTimes(5);
 	}
-
 }

@@ -1,9 +1,10 @@
 import java.io.IOException;
-import java.util.LinkedList;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 
 import parser.Annotation;
-
-import extractor.CStyleAnnotationExtractor;
+import extractor.AnnotationExtractor;
 
 
 public class AnnotationUser {
@@ -12,19 +13,19 @@ public class AnnotationUser {
 		String path = "/Users/Todberg/Documents/SW10/Code/Wala Exploration/src/";
 		String file = "SimpleApplication.java";
 		
-		CStyleAnnotationExtractor extractor = new CStyleAnnotationExtractor();
+		AnnotationExtractor extractor = new AnnotationExtractor();
 		
 		try {
-			LinkedList<Annotation> annotations = extractor.retrieveAnnotations(path, file, 6);
-			
-			System.out.println("printing annotations...");
-			for(Annotation ann : annotations) {
-				System.out.println("Type: " + ann.getAnnotationType().toString() + " Value: " + ann.getAnnotationValue());
+			Map<Integer, Annotation> annotations = extractor.retrieveAnnotations(path, file);
+			Set<Entry<Integer, Annotation>> annotationsIterable =  annotations.entrySet();
+			for(Entry<Integer, Annotation> annotation : annotationsIterable) {
+				System.out.print("Line: " + annotation.getKey().intValue() + ", ");
+				System.out.print("Type: " + annotation.getValue().getAnnotationType() + ", ");
+				System.out.print("Value: " + annotation.getValue().getAnnotationValue());
 			}
 			
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
-
 }

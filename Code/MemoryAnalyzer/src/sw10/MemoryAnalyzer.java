@@ -276,6 +276,7 @@ public class MemoryAnalyzer {
 		AnalysisScope scope = AnalysisScopeReader.makeJavaBinaryAnalysisScope(application, 
 				FileProvider.getFile(CallGraphTestUtil.REGRESSION_EXCLUSIONS));
 		Module appMixed = FileProvider.getJarFileModule(application, AnalysisScopeReader.class.getClassLoader());
+
 		Iterator<ModuleEntry> myit = appMixed.getEntries();
 		
 		MyModule app = new MyModule(), prim = new MyModule();

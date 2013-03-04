@@ -2,17 +2,17 @@ package parser;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.util.LinkedList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import parser.Annotation.AnnotationType;
 
 public class Parser {
 
 	private static final String ANNOTATION_FORMAT = "//@";
 	private static final String ANNOTATION_REGEX = "[" + ANNOTATION_FORMAT + "][\\s]*([a-zA-Z]*)[\\s]*[\\s]*[=][\\s]*([\\-_a-zA-Z0-9]+)";
-	
-	private static final String DO_PATTERN = "do {";
-	private static final String DO_PATTERN2 = "do{";
 	
 	private static final Pattern annotationRegex = Pattern.compile(ANNOTATION_REGEX);
 	
@@ -20,45 +20,31 @@ public class Parser {
 	private static final int ANNOTATION_VALUE_GROUP = 2;
 	
 	
-	public LinkedList<Annotation> GetAnnotations(BufferedReader fileReader, int lineNum) throws IOException {
+	public Map<Integer, Annotation> GetAnnotations(BufferedReader fileReader) throws IOException {
 		Matcher regexMatcher;
-		
-		int offset = 2;
 
-		LinkedList<Annotation> annotationList = new LinkedList<Annotation>();
+		Map<Integer, Annotation> annotations = new HashMap<Integer, Annotation>();
 		
 		String annotationType;
 		String annotationValue;
+
+		String line = "";
+		int lineNumber = 1;
 		
-		lineNum = lineNum - offset;
-		
-		for (; lineNum > 0; lineNum--) {
-			
-			fileReader.reset();
-			
-			for (int i = 1; i <= lineNum; i++)
-				fileReader.readLine();
-			
-			String possibleAnnotation = fileReader.readLine();
-			if (possibleAnnotation.contains(ANNOTATION_FORMAT)) {
+		while((line = fileReader.readLine()) != null) {
+			if(line.contains(ANNOTATION_FORMAT)) {
+				regexMatcher = annotationRegex.matcher(line);
 				
-				regexMatcher = annotationRegex.matcher(possibleAnnotation);
-				
-				if (regexMatcher.find()) {
+				if(regexMatcher.find()) {
 					annotationType = regexMatcher.group(ANNOTATION_TYPE_GROUP);
 					annotationValue = regexMatcher.group(ANNOTATION_VALUE_GROUP);
-					if (annotationType.equals("loopbound")) {
-						annotationList.add(new Annotation(Annotation.AnnotationType.LOOPBOUND, annotationValue));
+					if(annotationType.equals("loopbound")) {
+						annotations.put(lineNumber, new Annotation(AnnotationType.LOOPBOUND, annotationValue));				
 					}
 				}
 			}
-			else if (possibleAnnotation.contains(DO_PATTERN) || possibleAnnotation.contains(DO_PATTERN2)) {
-				continue;
-			}
-			else {
-				break;
-			}
+			lineNumber++;
 		}
-		return annotationList;
+		return annotations;
 	}
 }
