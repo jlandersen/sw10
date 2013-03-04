@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<launchConfiguration type="org.eclipse.jdt.launching.localJavaApplication">
+<listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_PATHS">
+<listEntry value="/Animus/src/sw10/animus/program/Program.java"/>
+</listAttribute>
+<listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_TYPES">
+<listEntry value="1"/>
+</listAttribute>
+<stringAttribute key="org.eclipse.jdt.launching.MAIN_TYPE" value="sw10.animus.program.Program"/>
+<stringAttribute key="org.eclipse.jdt.launching.PROGRAM_ARGUMENTS" value="-jvmmodel &quot;model.json&quot; -application ${workspace_loc}/Application.jar -sources &quot;${sw10_home}/Code/Wala Exploration/src&quot; -output $(project_path)/output -entrypoint SimpleApplication"/>
+<stringAttribute key="org.eclipse.jdt.launching.PROJECT_ATTR" value="Animus"/>
+</launchConfiguration>
