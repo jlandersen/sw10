@@ -4,6 +4,7 @@
 	<comment></comment>
 	<projects>
 		<project>com.ibm.wala.core</project>
+		<project>com.ibm.wala.core.tests</project>
 		<project>com.ibm.wala.ide</project>
 		<project>com.ibm.wala.shrike</project>
 		<project>com.ibm.wala.util</project>

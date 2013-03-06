@@ -6,5 +6,6 @@
 	<classpathentry combineaccessrules="false" kind="src" path="/com.ibm.wala.ide"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/com.ibm.wala.shrike"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/com.ibm.wala.util"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/com.ibm.wala.core.tests"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
