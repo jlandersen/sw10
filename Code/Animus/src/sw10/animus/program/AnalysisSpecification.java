@@ -6,11 +6,12 @@ public class AnalysisSpecification {
 	public enum AnalysisType { ALL, STACK, ALLOCATIONS };
 	
 	private String applicationJar;
-	private String sourceFilesRootDirectory;
-	private String outputDirectoryForReports;
+	private boolean jarIncludesStdLibraries;
+	private String sourceFilesRootDir;
+	private String outputDir;
 	private String entryPoint;
 	private AnalysisType typeOfAnalysisPerformed;
-	private Boolean shouldGenerateAnalysisReports;
+	private boolean shouldGenerateAnalysisReports;
 	private JVMModel jvmModel;
 	
 	public AnalysisSpecification() {
@@ -26,20 +27,28 @@ public class AnalysisSpecification {
 		this.applicationJar = applicationJar;
 	}
 	
-	public String getSourceFilesRootDirectory() {
-		return sourceFilesRootDirectory;
+	public void setJarIncludesStdLibraries(boolean jarIncludesStdLibraries) {
+		this.jarIncludesStdLibraries = jarIncludesStdLibraries;
 	}
 	
-	public void setSourceFilesRootDirectory(String sourceFilesRootDirectory) {
-		this.sourceFilesRootDirectory = sourceFilesRootDirectory;
+	public boolean getJarIncludesStdLibraries() {
+		return jarIncludesStdLibraries;
 	}
 	
-	public String getOutputDirectoryForReports() {
-		return outputDirectoryForReports;
+	public String getSourceFilesRootDir() {
+		return sourceFilesRootDir;
 	}
 	
-	public void setOutputDirectoryForReports(String outputDirectoryForReports) {
-		this.outputDirectoryForReports = outputDirectoryForReports;
+	public void setSourceFilesRootDir(String sourceFilesRootDir) {
+		this.sourceFilesRootDir = sourceFilesRootDir;
+	}
+	
+	public String getOutputDir() {
+		return outputDir;
+	}
+	
+	public void setOutputDirectoryForReports(String outputDir) {
+		this.outputDir = outputDir;
 	}
 	
 	public String getEntryPoint() {

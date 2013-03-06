@@ -26,7 +26,6 @@ import com.ibm.wala.ipa.cha.ClassHierarchy;
 import com.ibm.wala.ipa.cha.ClassHierarchyException;
 import com.ibm.wala.util.CancelException;
 import com.ibm.wala.util.config.AnalysisScopeReader;
-import com.ibm.wala.util.config.FileOfClasses;
 import com.ibm.wala.util.io.FileProvider;
 
 public class AnalysisEnvironmentBuilder {
@@ -48,8 +47,7 @@ public class AnalysisEnvironmentBuilder {
 	private AnalysisEnvironment makeEnvironment() throws IOException, 
 														 ClassHierarchyException, 
 														 IllegalArgumentException, 
-														 CancelException {		
-
+														 CancelException {
 		AnalysisScope analysisScope = buildAnalysisScope();
 		ClassHierarchy classHierarchy = buildClassHierarchy(analysisScope);
 		CallGraph callGraph = buildZeroXCFAAnalysis(analysisScope, classHierarchy);
@@ -65,35 +63,40 @@ public class AnalysisEnvironmentBuilder {
 		return environment;
 	}
 	
-	private AnalysisScope buildAnalysisScope() throws IOException {
-		AnalysisScope scope = AnalysisScope.createJavaAnalysisScope();
-		scope.setExclusions(FileOfClasses.createFileOfClasses(FileProvider.getFile(CallGraphTestUtil.REGRESSION_EXCLUSIONS)));
-		Map<String, File> originalSourceCodeFilesByClassName = FileScanner.scan(new File(specification.getSourceFilesRootDirectory()));
+	private AnalysisScope buildAnalysisScope() throws IOException {	
+		AnalysisScope scope = null;
+		if (specification.getJarIncludesStdLibraries()) {
+			scope = AnalysisScope.createJavaAnalysisScope();
+		}
+		else
+		{
+			scope = AnalysisScopeReader.makePrimordialScope(FileProvider.getFile(CallGraphTestUtil.REGRESSION_EXCLUSIONS));
+		}
+		
+		Map<String, File> originalSourceCodeFilesByClassName = FileScanner.scan(new File(specification.getSourceFilesRootDir()));
 		
 		Module fullModuleForApplication = FileProvider.getJarFileModule(specification.getApplicationJar(), AnalysisScopeReader.class.getClassLoader());
 		Iterator<ModuleEntry> entriesInApplication = fullModuleForApplication.getEntries();
 		ScopeModule applicationScope = new ScopeModule();
 		ScopeModule primordialScope = new ScopeModule();
-		   
+		
 		while (entriesInApplication.hasNext())
 		{
 			ModuleEntry entry = entriesInApplication.next();
-			if (entry.getClassName().startsWith("java") ||
+			if (specification.getJarIncludesStdLibraries() && 
+					(entry.getClassName().startsWith("java") ||
 					entry.getClassName().startsWith("com") || 
 					entry.getClassName().startsWith("joprt") || 
-					entry.getClassName().startsWith("util/Dbg") || entry.getClassName().startsWith("util/Timer") ){
+					entry.getClassName().startsWith("util/Dbg") || entry.getClassName().startsWith("util/Timer"))){
 				primordialScope.addEntry(entry);
 			}	  
 			else
 			{
 				if (entry.isClassFile()) {
 					applicationScope.addEntry(entry);
-					
-
 					scope.addSourceFileToScope(scope.getLoader(AnalysisScope.APPLICATION),
-							originalSourceCodeFilesByClassName.get(getClassNameOrOuterMostClassNameIfNestedClass(entry.getClassName())), 
+							originalSourceCodeFilesByClassName.get(sw10.animus.util.Util.getClassNameOrOuterMostClassNameIfNestedClass(entry.getClassName())), 
 							entry.getClassName() + ".java");
-							
 				}
 			}	
 		}
@@ -102,17 +105,6 @@ public class AnalysisEnvironmentBuilder {
 		scope.addToScope(scope.getLoader(AnalysisScope.APPLICATION), applicationScope);
 		
 		return scope;
-	}
-	
-	private String getClassNameOrOuterMostClassNameIfNestedClass(String fullQualifiedClassName) {
-		String fileKey = null;
-		if (fullQualifiedClassName.contains("$")) {
-			fileKey = fullQualifiedClassName.substring(0, fullQualifiedClassName.indexOf("$"));
-		} else {
-			fileKey = fullQualifiedClassName;
-		}
-		
-		return fileKey;
 	}
 	
 	private ClassHierarchy buildClassHierarchy(AnalysisScope analysisScope) throws ClassHierarchyException {

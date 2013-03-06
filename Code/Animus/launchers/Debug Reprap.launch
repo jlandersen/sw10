@@ -7,6 +7,6 @@
 <listEntry value="1"/>
 </listAttribute>
 <stringAttribute key="org.eclipse.jdt.launching.MAIN_TYPE" value="sw10.animus.program.Program"/>
-<stringAttribute key="org.eclipse.jdt.launching.PROGRAM_ARGUMENTS" value="${build_files}-jvmmodel &quot;model.json&quot; -application ${workspace_loc}/reprap.jar -sources &quot;${rep_rap}&quot; -output $(project_path)/output -entrypoint org/reprap/Main"/>
+<stringAttribute key="org.eclipse.jdt.launching.PROGRAM_ARGUMENTS" value="${build_files}-jvm_model &quot;model.json&quot; -application ${workspace_loc}/reprap.jar -jar_includes_std_libraries true -source_files_root_dir &quot;${rep_rap}&quot; -output_dir $(project_path)/output -entry_point org/reprap/Main"/>
 <stringAttribute key="org.eclipse.jdt.launching.PROJECT_ATTR" value="Animus"/>
 </launchConfiguration>

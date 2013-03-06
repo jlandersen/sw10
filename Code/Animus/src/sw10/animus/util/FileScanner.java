@@ -7,7 +7,7 @@ import java.util.Map;
 public class FileScanner {
 	
 	private static Map<String, File> mapping = new HashMap<String, File>(); 
-		
+
 	public static Map<String, File> scan(File root) {
 		return scan(root, "");
 	}
