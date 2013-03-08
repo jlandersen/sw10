@@ -6,19 +6,27 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import lpsolve.LpSolve;
 import lpsolve.LpSolveException;
+import sw10.animus.build.AnalysisEnvironment;
 import sw10.animus.util.LpFileCreator;
 import sw10.animus.util.LpFileCreator.ObjectiveFunction;
 import sw10.animus.util.annotationextractor.parser.Annotation;
 
+import com.ibm.wala.classLoader.CallSiteReference;
 import com.ibm.wala.classLoader.IBytecodeMethod;
+import com.ibm.wala.classLoader.IMethod;
+import com.ibm.wala.classLoader.ShrikeBTMethod;
 import com.ibm.wala.ipa.callgraph.CGNode;
+import com.ibm.wala.shrikeBT.IInstruction;
 import com.ibm.wala.shrikeCT.InvalidClassFileException;
 import com.ibm.wala.ssa.ISSABasicBlock;
 import com.ibm.wala.ssa.SSAInstruction;
+import com.ibm.wala.ssa.SSAInvokeInstruction;
 import com.ibm.wala.ssa.SSANewInstruction;
+import com.ibm.wala.types.MethodReference;
 import com.ibm.wala.types.TypeName;
 import com.ibm.wala.util.collections.Iterator2Iterable;
 import com.ibm.wala.util.graph.labeled.SlowSparseNumberedLabeledGraph;
@@ -30,13 +38,14 @@ public class MemoryAnalyzer implements ICallbacks {
 	public int totalNodeCost;
 	public Map<TypeName, Integer> typeAllocCount;
 	public Map<Integer, TypeName> blockAlloc;
-
 	private SlowSparseNumberedLabeledGraph<ISSABasicBlock, String> cfgAnalysed;
 	private Map<Integer, Annotation> annotations;
 	private Map<Integer, ArrayList<Integer>> loops;
-	
 	private int currentBlockCost;
 	private ISSABasicBlock currentBasicBlock;
+	private CGNode currentNode;
+	private AnalysisResults results;
+	private AnalysisEnvironment environment;
 
 	public MemoryAnalyzer() {
 		try {
@@ -48,10 +57,12 @@ public class MemoryAnalyzer implements ICallbacks {
 		totalNodeCost = 0; 
 		typeAllocCount = new HashMap<TypeName, Integer>();
 		blockAlloc= new HashMap<Integer, TypeName>();
+		results = AnalysisResults.getAnalysisResults();
 	}
 
 	@Override
-	public void initialize(SlowSparseNumberedLabeledGraph<ISSABasicBlock, String> cfg, Map<Integer, Annotation> annotations, Map<Integer, ArrayList<Integer>> loops) {
+	public void initialize(AnalysisEnvironment environment, SlowSparseNumberedLabeledGraph<ISSABasicBlock, String> cfg, Map<Integer, Annotation> annotations, Map<Integer, ArrayList<Integer>> loops) {
+		this.environment = environment;
 		this.cfgAnalysed = cfg;
 		this.annotations = annotations;
 		this.loops = loops;	
@@ -59,6 +70,7 @@ public class MemoryAnalyzer implements ICallbacks {
 
 	@Override
 	public void beginNode(CGNode cgNode) {
+		currentNode = cgNode;
 	}
 
 	@Override
@@ -106,6 +118,20 @@ public class MemoryAnalyzer implements ICallbacks {
 			currentBlockCost += 1;
 			TypeName typeName = ((SSANewInstruction)instruction).getNewSite().getDeclaredType().getName();
 			blockAlloc.put(currentBasicBlock.getGraphNodeId(), typeName);
+		}
+		
+		if (instruction instanceof SSAInvokeInstruction) {
+			SSAInvokeInstruction inst = (SSAInvokeInstruction)instruction;
+			if(inst.isDispatch()) {	// invokevirtual			
+				CallSiteReference callSiteRef = inst.getCallSite();
+				Set<CGNode> possibleTargets = environment.callGraph.getPossibleTargets(currentNode, callSiteRef);
+				
+			} else { // invokestatic or invokespecial
+				MethodReference targetRef = inst.getDeclaredTarget();
+				Set<CGNode> targets = environment.callGraph.getNodes(targetRef);
+				CGNode target = targets.iterator().next();
+				
+			}
 		}
 	}
 

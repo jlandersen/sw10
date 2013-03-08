@@ -4,8 +4,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Map;
 
-import javax.security.auth.callback.CallbackHandler;
-
 import sw10.animus.analysis.loopanalysis.CFGLoopAnalyzer;
 import sw10.animus.build.AnalysisEnvironment;
 import sw10.animus.program.AnalysisSpecification;
@@ -16,10 +14,7 @@ import sw10.animus.util.annotationextractor.parser.Annotation;
 import com.ibm.wala.classLoader.IBytecodeMethod;
 import com.ibm.wala.classLoader.IClass;
 import com.ibm.wala.classLoader.IMethod;
-import com.ibm.wala.ipa.callgraph.AnalysisScope;
 import com.ibm.wala.ipa.callgraph.CGNode;
-import com.ibm.wala.ipa.callgraph.CallGraph;
-import com.ibm.wala.ipa.cha.ClassHierarchy;
 import com.ibm.wala.ssa.IR;
 import com.ibm.wala.ssa.ISSABasicBlock;
 import com.ibm.wala.ssa.SSAInstruction;
@@ -31,18 +26,17 @@ import com.ibm.wala.util.graph.labeled.SlowSparseNumberedLabeledGraph;
 import com.ibm.wala.util.graph.traverse.BFSIterator;
 
 public class Analyzer {
+	
 	private AnalysisSpecification specification;
-	private CallGraph callGraph;
-	private ClassHierarchy classHierarchy;
-	private AnalysisScope analysisScope;
 	private AnnotationExtractor extractor;
 	private Class<? extends ICallbacks> callbackType;
+	private Class<? extends ILPCostComputer<ILPCostResult>> costComputerType;
+	private ILPCostComputer<ILPCostResult> costComputer;
+	private AnalysisEnvironment environment;
 
 	private Analyzer(AnalysisSpecification specification, AnalysisEnvironment environment) {
+		this.environment = environment;
 		this.specification = specification;
-		this.callGraph = environment.callGraph;
-		this.classHierarchy = environment.classHierarchy;
-		this.analysisScope = environment.analysisScope;
 		this.extractor = new AnnotationExtractor();
 	}
 
@@ -52,30 +46,29 @@ public class Analyzer {
 
 	public void start(Class<? extends ICallbacks> callbackType) throws InstantiationException, IllegalAccessException, IllegalArgumentException, WalaException, IOException {
 		this.callbackType = callbackType;
-		CGNode entryNode = callGraph.getEntrypointNodes().iterator().next();
-		
+		CGNode entryNode = environment.callGraph.getEntrypointNodes().iterator().next();
+		costComputer = costComputerType.newInstance();
 		analyzeNode(entryNode, callbackType.newInstance());	
 	}
 
-	private void analyzeNode(CGNode cgNode, ICallbacks callbackHandlers) throws IllegalArgumentException, WalaException, IOException {
+	public void analyzeNode(CGNode cgNode, ICallbacks callbackHandlers) throws IllegalArgumentException, WalaException, IOException {
 		IBytecodeMethod method = (IBytecodeMethod)cgNode.getMethod();
 		IR ir = cgNode.getIR();
 		
-		Pair<SlowSparseNumberedLabeledGraph<ISSABasicBlock, String>, Map<String, Pair<Integer, Integer>>> sanitized = Util.sanitize(ir, classHierarchy);
+		Pair<SlowSparseNumberedLabeledGraph<ISSABasicBlock, String>, Map<String, Pair<Integer, Integer>>> sanitized = Util.sanitize(ir, environment.classHierarchy);
 		SlowSparseNumberedLabeledGraph<ISSABasicBlock, String> cfg = sanitized.fst;
 		Map<String, Pair<Integer, Integer>> edgeLabelToNodesIDs = sanitized.snd;
 		
 		Map<Integer, Annotation> annotationByLineNumber = getAnnotations(method);
 		Map<Integer, ArrayList<Integer>> loopBlocksByHeaderBlockId = getLoops(cfg, ir.getControlFlowGraph().entry());
 		
-		callbackHandlers.initialize(cfg, annotationByLineNumber, loopBlocksByHeaderBlockId);
+		callbackHandlers.initialize(environment, cfg, annotationByLineNumber, loopBlocksByHeaderBlockId);
 		callbackHandlers.beginNode(cgNode);
 		analyzeCFG(cfg, loopBlocksByHeaderBlockId, annotationByLineNumber, cgNode, edgeLabelToNodesIDs, callbackHandlers);
 		callbackHandlers.endNode(cgNode);
-		
 	}
 	
-	private void analyzeCFG(SlowSparseNumberedLabeledGraph<ISSABasicBlock, String> cfg, Map<Integer, ArrayList<Integer>> loops, Map<Integer, Annotation> annotations, CGNode node, Map<String, Pair<Integer, Integer>> edgeLabelToNodesIDs, ICallbacks callbackHandlers) {
+	private ILPCostResult analyzeCFG(SlowSparseNumberedLabeledGraph<ISSABasicBlock, String> cfg, Map<Integer, ArrayList<Integer>> loops, Map<Integer, Annotation> annotations, CGNode node, Map<String, Pair<Integer, Integer>> edgeLabelToNodesIDs, ICallbacks callbackHandlers) {
 		BFSIterator<ISSABasicBlock> iteratorBFSOrdering = new BFSIterator<ISSABasicBlock>(cfg);
 		
 		while(iteratorBFSOrdering.hasNext()) {
@@ -100,6 +93,14 @@ public class Analyzer {
 			else
 				callbackHandlers.endBasicBlockNormal(currentBlock);			
 		}
+		
+		return null;
+	}
+	
+	private ILPCostResult analyzeBasicBlock(ISSABasicBlock block, CGNode node) {
+		ILPCostResult costForBlock = null;
+		ILPCostResult costForInstruction = costComputer.getCostForInstructionInBlock(null, block, node);
+		return costForBlock;
 	}
 	
 	private Map<Integer, ArrayList<Integer>> getLoops(Graph<ISSABasicBlock> graph, ISSABasicBlock entry) {
