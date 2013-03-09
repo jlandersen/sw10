@@ -7,10 +7,10 @@ import com.ibm.wala.ipa.callgraph.CGNode;
 
 public class AnalysisResults {	
 	private static AnalysisResults singletonObject;
-	private Map<CGNode, ICallbacks> nodesProcessed;
+	private Map<CGNode, ICostResult> nodesProcessed;
 	
 	private AnalysisResults() {
-		this.nodesProcessed = new ConcurrentHashMap<CGNode, ICallbacks>();
+		this.nodesProcessed = new ConcurrentHashMap<CGNode, ICostResult>();
 	}
 	
 	public static synchronized AnalysisResults getAnalysisResults() {
@@ -20,11 +20,16 @@ public class AnalysisResults {
 		return singletonObject;
 	}
 	
-	public Object clone() throws CloneNotSupportedException {
-		throw new CloneNotSupportedException();
+	public void saveResultForNode(CGNode node, ICostResult results) {
+		this.nodesProcessed.put(node, results);
 	}
 	
-	public void saveResultForNode(CGNode node, ICallbacks callbackHandlerWithResults) {
-		this.nodesProcessed.put(node, callbackHandlerWithResults);
+	public ICostResult getResultsForNode(CGNode node) {
+		return this.nodesProcessed.get(node);
 	}
+	
+	public boolean isNodeProcessed(CGNode node) {
+		return nodesProcessed.containsKey(node);
+	}
+	
 }

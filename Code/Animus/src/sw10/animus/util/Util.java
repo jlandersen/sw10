@@ -1,15 +1,21 @@
 package sw10.animus.util;
 
+import java.io.File;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Properties;
 
 import com.ibm.wala.cfg.ControlFlowGraph;
 import com.ibm.wala.cfg.IBasicBlock;
 import com.ibm.wala.classLoader.IClass;
 import com.ibm.wala.classLoader.Language;
+import com.ibm.wala.examples.properties.WalaExamplesProperties;
+import com.ibm.wala.ipa.callgraph.CGNode;
+import com.ibm.wala.ipa.cha.ClassHierarchy;
 import com.ibm.wala.ipa.cha.IClassHierarchy;
+import com.ibm.wala.properties.WalaProperties;
 import com.ibm.wala.shrikeCT.InvalidClassFileException;
 import com.ibm.wala.ssa.IR;
 import com.ibm.wala.ssa.ISSABasicBlock;
@@ -21,9 +27,12 @@ import com.ibm.wala.ssa.SSAReturnInstruction;
 import com.ibm.wala.ssa.SSAThrowInstruction;
 import com.ibm.wala.types.TypeReference;
 import com.ibm.wala.util.WalaException;
+import com.ibm.wala.util.collections.HashMapFactory;
 import com.ibm.wala.util.collections.Pair;
 import com.ibm.wala.util.debug.Assertions;
 import com.ibm.wala.util.graph.labeled.SlowSparseNumberedLabeledGraph;
+import com.ibm.wala.viz.DotUtil;
+import com.ibm.wala.viz.NodeDecorator;
 
 
 public class Util {
@@ -39,10 +48,6 @@ public class Util {
 	}
 	
 	public static Pair<SlowSparseNumberedLabeledGraph<ISSABasicBlock, String>, Map<String, Pair<Integer, Integer>>> sanitize(IR ir, IClassHierarchy cha) throws IllegalArgumentException, WalaException {
-		if (ir == null) {
-			throw new IllegalArgumentException("ir cannot be null");
-		}
-
 		Map<String, Pair<Integer, Integer>> edgeLabels = new HashMap<String, Pair<Integer,Integer>>();
 
 		ControlFlowGraph<SSAInstruction, ISSABasicBlock> cfg = ir.getControlFlowGraph();
@@ -66,26 +71,28 @@ public class Util {
 				}
 			}
 		}
-
+		
 		// now add edges to exit, ignoring undeclared exceptions
 		ISSABasicBlock exit = cfg.exit();
-
+		int incomingEdgesToExitNodeCounter = 0;
 		for (Iterator it = cfg.getPredNodes(exit); it.hasNext();) {
 			// for each predecessor of exit ...
 			ISSABasicBlock b = (ISSABasicBlock) it.next();
 
 			SSAInstruction s = ir.getInstructions()[b.getLastInstructionIndex()];
 			if (s == null) {
-				// TODO: this shouldn't happen?
 				continue;
 			}
+			
+			
 			if (s instanceof SSAReturnInstruction || s instanceof SSAThrowInstruction || cfg.getSuccNodeCount(b) == 1) {
-				// return or athrow, or some statement which is not an athrow or return whose only successor is the exit node (can only
-				// occur in synthetic methods without a return statement? --MS); add edge to exit
-				g.addEdge(b, exit, "ft");
-				edgeLabels.put("ft", Pair.make(b.getGraphNodeId(), exit.getGraphNodeId()));
+				if (s instanceof SSAThrowInstruction) {
+					System.out.println("Found throw!");
+				}
+				g.addEdge(b, exit, "ft" + incomingEdgesToExitNodeCounter);
+				edgeLabels.put("ft" + incomingEdgesToExitNodeCounter, Pair.make(b.getGraphNodeId(), exit.getGraphNodeId()));
+				incomingEdgesToExitNodeCounter++;
 			} else {
-				// compute types of exceptions the pei may throw
 				TypeReference[] exceptions = null;
 				try {
 					exceptions = computeExceptions(cha, ir, s);
@@ -183,6 +190,45 @@ public class Util {
 			}
 			return exceptions;
 		}
+	}
+	
+	public static void CreatePDFCFG(SlowSparseNumberedLabeledGraph<ISSABasicBlock, String> cfg, ClassHierarchy cha, CGNode node) throws WalaException {
+		Properties wp = WalaProperties.loadProperties();
+	    wp.putAll(WalaExamplesProperties.loadProperties());
+	    String outputDir = wp.getProperty(WalaProperties.OUTPUT_DIR) + File.separatorChar;
+		
+	    String javaFileName = node.getMethod().getDeclaringClass().getSourceFileName();
+	    javaFileName = javaFileName.substring(0, javaFileName.lastIndexOf("."));
+	    
+	    String psFile = outputDir + javaFileName + ".pdf";		
+	    String dotFile = outputDir + javaFileName + ".dt";
+	    String dotExe = wp.getProperty(WalaExamplesProperties.DOT_EXE);
+	    String gvExe = wp.getProperty(WalaExamplesProperties.PDFVIEW_EXE);
+	    final HashMap<ISSABasicBlock, String> labelMap = HashMapFactory.make();
+	    
+	    for (Iterator<ISSABasicBlock> it = cfg.iterator(); it.hasNext();) {
+	        ISSABasicBlock bb = it.next();
+	        
+	        StringBuilder label = new StringBuilder();
+	        label.append("ID #" + bb.getGraphNodeId() + "\n");
+	        label.append(bb.toString() + "\n");
+	        
+	        Iterator<SSAInstruction> itInst = bb.iterator();
+	        while(itInst.hasNext()) {
+	        	SSAInstruction inst = itInst.next();
+	        	label.append(inst.toString() + "\n");
+	        }
+	        
+	        labelMap.put(bb, label.toString());
+	      
+	    }
+	    NodeDecorator labels = new NodeDecorator() {
+	        public String getLabel(Object o) {
+	            return labelMap.get(o);
+	        }
+	    };
+	    
+		DotUtil.dotify(cfg, labels, dotFile, psFile, dotExe); 
 	}
 
 }

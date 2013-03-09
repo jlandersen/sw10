@@ -1,6 +1,7 @@
 package sw10.animus.util.annotationextractor.extractor;
 
 import java.io.BufferedReader;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -28,7 +29,13 @@ public class AnnotationExtractor implements IAnnotationExtractor {
 		Parser parser = new Parser();
 		BufferedReader fileReader = null;
 
-		fileReader = fileFinder.find(file);
+		try {
+			fileReader = fileFinder.find(file);
+		}catch(FileNotFoundException e) {
+			return null;
+		} catch(NullPointerException e) {
+			return null;
+		}
 		
 		Map<Integer, Annotation> annotations = parser.GetAnnotations(fileReader);
 		cachedAnnotations.put(fileKey, annotations);

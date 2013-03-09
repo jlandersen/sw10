@@ -6,7 +6,9 @@ import java.util.Properties;
 import java.util.Set;
 
 import sw10.animus.analysis.Analyzer;
-import sw10.animus.analysis.MemoryAnalyzer;
+import sw10.animus.analysis.CostComputerMemory;
+import sw10.animus.analysis.ICostComputer;
+import sw10.animus.analysis.ICostResult;
 import sw10.animus.build.AnalysisEnvironment;
 import sw10.animus.build.AnalysisEnvironmentBuilder;
 import sw10.animus.program.AnalysisSpecification.AnalysisType;
@@ -23,9 +25,7 @@ public class Program {
 		AnalysisSpecification specification = parseCommandLineArguments(args);
 		AnalysisEnvironment environment = AnalysisEnvironmentBuilder.makeFromSpecification(specification);
 		Analyzer analyzer = Analyzer.makeAnalyzer(specification, environment);
-		analyzer.start(MemoryAnalyzer.class);
-		
-		System.out.println("done...");
+		analyzer.start((Class<? extends ICostComputer<ICostResult>>)CostComputerMemory.class);
 	}
 	
 	private static AnalysisSpecification parseCommandLineArguments(String[] args) {

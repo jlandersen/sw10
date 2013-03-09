@@ -15,7 +15,7 @@ public class FileFinder {
 		this.path = path;
 	}
 	
-	public BufferedReader find(String sourceFilePath) throws IOException {
+	public BufferedReader find(String sourceFilePath) throws IOException, NullPointerException, FileNotFoundException {
 		BufferedReader reader = this.cache.get(sourceFilePath);
 		
 		if (reader == null) {
@@ -33,7 +33,7 @@ public class FileFinder {
 		return reader;
 	}
 	
-	private File getFile(String file) throws FileNotFoundException {
+	private File getFile(String file) throws NullPointerException, FileNotFoundException {
 		File path = new File(new File(this.path), file);
 		if(path.isFile())
 			return path;

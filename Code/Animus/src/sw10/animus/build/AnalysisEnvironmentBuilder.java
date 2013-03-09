@@ -29,32 +29,32 @@ import com.ibm.wala.util.config.AnalysisScopeReader;
 import com.ibm.wala.util.io.FileProvider;
 
 public class AnalysisEnvironmentBuilder {
-	
+
 	private AnalysisSpecification specification;
-	
+
 	private AnalysisEnvironmentBuilder(AnalysisSpecification specification) {
 		this.specification = specification;
 	}
-	
+
 	public static AnalysisEnvironment makeFromSpecification(AnalysisSpecification specification) throws IOException, 
-																					   ClassHierarchyException, 
-																					   IllegalArgumentException, 
-																					   CancelException {
+	ClassHierarchyException, 
+	IllegalArgumentException, 
+	CancelException {
 		AnalysisEnvironmentBuilder builder = new AnalysisEnvironmentBuilder(specification);
 		return builder.makeEnvironment();
 	}
-	
+
 	private AnalysisEnvironment makeEnvironment() throws IOException, 
-														 ClassHierarchyException, 
-														 IllegalArgumentException, 
-														 CancelException {
+	ClassHierarchyException, 
+	IllegalArgumentException, 
+	CancelException {
 		AnalysisScope analysisScope = buildAnalysisScope();
 		ClassHierarchy classHierarchy = buildClassHierarchy(analysisScope);
 		CallGraph callGraph = buildZeroXCFAAnalysis(analysisScope, classHierarchy);
-		
+
 		return saveBuiltEnvironmentAsNewObject(analysisScope, classHierarchy, callGraph);
 	}
-	
+
 	private AnalysisEnvironment saveBuiltEnvironmentAsNewObject(AnalysisScope scope, ClassHierarchy classHierarchy, CallGraph callGraph) {
 		AnalysisEnvironment environment = new AnalysisEnvironment();
 		environment.analysisScope = scope;
@@ -62,7 +62,7 @@ public class AnalysisEnvironmentBuilder {
 		environment.callGraph = callGraph;
 		return environment;
 	}
-	
+
 	private AnalysisScope buildAnalysisScope() throws IOException {	
 		AnalysisScope scope = null;
 		if (specification.getJarIncludesStdLibraries()) {
@@ -72,22 +72,22 @@ public class AnalysisEnvironmentBuilder {
 		{
 			scope = AnalysisScopeReader.makePrimordialScope(FileProvider.getFile(CallGraphTestUtil.REGRESSION_EXCLUSIONS));
 		}
-		
+
 		Map<String, File> originalSourceCodeFilesByClassName = FileScanner.scan(new File(specification.getSourceFilesRootDir()));
-		
+
 		Module fullModuleForApplication = FileProvider.getJarFileModule(specification.getApplicationJar(), AnalysisScopeReader.class.getClassLoader());
 		Iterator<ModuleEntry> entriesInApplication = fullModuleForApplication.getEntries();
 		ScopeModule applicationScope = new ScopeModule();
 		ScopeModule primordialScope = new ScopeModule();
-		
+
 		while (entriesInApplication.hasNext())
 		{
 			ModuleEntry entry = entriesInApplication.next();
 			if (specification.getJarIncludesStdLibraries() && 
 					(entry.getClassName().startsWith("java") ||
-					entry.getClassName().startsWith("com") || 
-					entry.getClassName().startsWith("joprt") || 
-					entry.getClassName().startsWith("util/Dbg") || entry.getClassName().startsWith("util/Timer"))){
+							entry.getClassName().startsWith("com") || 
+							entry.getClassName().startsWith("joprt") || 
+							entry.getClassName().startsWith("util/Dbg") || entry.getClassName().startsWith("util/Timer"))){
 				primordialScope.addEntry(entry);
 			}	  
 			else
@@ -100,34 +100,35 @@ public class AnalysisEnvironmentBuilder {
 				}
 			}	
 		}
-		
+
 		scope.addToScope(scope.getLoader(AnalysisScope.PRIMORDIAL), primordialScope);
 		scope.addToScope(scope.getLoader(AnalysisScope.APPLICATION), applicationScope);
-		
+
 		return scope;
 	}
-	
+
 	private ClassHierarchy buildClassHierarchy(AnalysisScope analysisScope) throws ClassHierarchyException {
-		 return ClassHierarchy.make(analysisScope);
+		return ClassHierarchy.make(analysisScope);
 	}
-	
+
 	private AnalysisOptions buildEntryPoint(AnalysisScope analysisScope, ClassHierarchy classHierarchy) {
 		Iterable<Entrypoint> entrypoints = Util.makeMainEntrypoints(analysisScope, classHierarchy, "L"+specification.getEntryPoint());
-	    AnalysisOptions options = new AnalysisOptions(analysisScope, entrypoints); 
-	    options.setReflectionOptions(ReflectionOptions.NONE);
-	    return options;
+		AnalysisOptions options = new AnalysisOptions(analysisScope, entrypoints);
+		options.setReflectionOptions(ReflectionOptions.NONE);
+
+		return options;
 	}
-	
+
 	private CallGraph buildZeroXCFAAnalysis(AnalysisScope analysisScope, ClassHierarchy classHierarchy) throws IllegalArgumentException, CancelException {
 		AnalysisOptions analysisOptions = buildEntryPoint(analysisScope, classHierarchy);
-		
+
 		Util.addDefaultSelectors(analysisOptions, classHierarchy);
 		Util.addDefaultBypassLogic(analysisOptions, analysisScope, Util.class.getClassLoader(), classHierarchy);		
-		
+
 		AnalysisCache cache = new AnalysisCache();
 		ZeroXCFABuilder builder = new ZeroXCFABuilder(classHierarchy, analysisOptions, cache, null, 
 				null, ZeroXInstanceKeys.NONE | ZeroXInstanceKeys.SMUSH_MANY);
-		
+
 		return builder.makeCallGraph(analysisOptions);
 	}
 }
