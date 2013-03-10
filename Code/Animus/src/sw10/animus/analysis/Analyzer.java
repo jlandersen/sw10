@@ -7,11 +7,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.swing.text.MaskFormatter;
-
 import lpsolve.LpSolve;
 import lpsolve.LpSolveException;
-
 import sw10.animus.analysis.loopanalysis.CFGLoopAnalyzer;
 import sw10.animus.build.AnalysisEnvironment;
 import sw10.animus.program.AnalysisSpecification;
@@ -66,11 +63,13 @@ public class Analyzer {
 		costComputer = this.costComputerType.newInstance();
 		CGNode entryNode = environment.callGraph.getEntrypointNodes().iterator().next();
 		ICostResult results = analyzeNode(entryNode);
+		System.out.println("Worst case allocation:" + results.getCostScalar());
 	}
 
 	public ICostResult analyzeNode(CGNode cgNode) {
-		System.out.println("Beginning " + cgNode.getMethod().getName() + ", " + cgNode.getMethod().getDeclaringClass().getName());
-		IBytecodeMethod method = (IBytecodeMethod)cgNode.getMethod();
+		IMethod method = cgNode.getMethod();
+		
+		System.out.println(method.toString());
 		IR ir = cgNode.getIR();
 
 		Pair<SlowSparseNumberedLabeledGraph<ISSABasicBlock, String>, Map<String, Pair<Integer, Integer>>> sanitized = null;
@@ -81,7 +80,17 @@ public class Analyzer {
 		}
 		SlowSparseNumberedLabeledGraph<ISSABasicBlock, String> cfg = sanitized.fst;
 		Map<String, Pair<Integer, Integer>> edgeLabelToNodesIDs = sanitized.snd;
-
+		
+		
+		if (method.getName().toString().equals("hey")) {
+			try {
+				Util.CreatePDFCFG(cfg, environment.classHierarchy, cgNode);
+			} catch (WalaException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		
 		Map<Integer, Annotation> annotationByLineNumber = getAnnotations(method);
 		Map<Integer, ArrayList<Integer>> loopBlocksByHeaderBlockId = getLoops(cfg, ir.getControlFlowGraph().entry());
 
@@ -134,7 +143,7 @@ public class Analyzer {
     				allocConstraint += "0 " + incommingLabel;
     				if(IteratorIncoming.hasNext()) {
     					flowConstraint += " + ";
-    					allocConstraint += " ";
+    					allocConstraint += " + ";
     				}
     			}
     			flowConstraint += " = 1";
@@ -197,7 +206,8 @@ public class Analyzer {
     				int lineNumberForLoop = 0;
     				String boundForLoop = "";
 					try {
-						lineNumberForLoop = method.getLineNumber(method.getBytecodeIndex(currentBlock.getFirstInstructionIndex()));
+						IBytecodeMethod bytecodeMethod = (IBytecodeMethod)cgNode.getMethod();
+						lineNumberForLoop = bytecodeMethod.getLineNumber(bytecodeMethod.getBytecodeIndex(currentBlock.getFirstInstructionIndex()));
 						if (annotationByLineNumber == null || !annotationByLineNumber.containsKey(lineNumberForLoop)) {
 							System.err.println("No bound for loop detected in " + method.getName());
 						} else {
@@ -238,15 +248,13 @@ public class Analyzer {
 		LpSolve solver = null;
 		try {
 			lpFileCreator.writeFile();
-			if (cgNode.getMethod().getName().equals("goodbye")) {
-				return null;
-			}
 			solver = LpSolve.readLp("application" + cgNode.getMethod().getName() + cgNode.getGraphNodeId() + ".lp", 1, null);
 	    	solver.solve();
 	    	System.out.println("LPSolve result for " + cgNode.getMethod().getName() + ", " + cgNode.getMethod().getDeclaringClass().getName() +  ": " + Math.round(solver.getObjective()));
 		} catch (IOException e) {
 			e.printStackTrace();
 		} catch (LpSolveException e) {
+			System.out.println("LPSolve FAILED for " + cgNode.getMethod().getName() + ", " + cgNode.getMethod().getDeclaringClass().getName());
 			e.printStackTrace();
 		}
 		
@@ -283,9 +291,10 @@ public class Analyzer {
 
 	private ICostResult analyzeInstruction(SSAInstruction instruction, ISSABasicBlock block, CGNode node) {
 		ICostResult costForInstruction = null;
+		
 		if(instruction instanceof SSAInvokeInstruction) {
 			SSAInvokeInstruction inst = (SSAInvokeInstruction)instruction;
-			if(inst.isDispatch()) {	// invokevirtual			
+			if(inst.isDispatch()) {	// invokevirtual
 				CallSiteReference callSiteRef = inst.getCallSite();
 				Set<CGNode> possibleTargets = environment.callGraph.getPossibleTargets(node, callSiteRef);
 				ICostResult maximumResult = new CostResultMemory();
@@ -299,7 +308,7 @@ public class Analyzer {
 			} else { // invokestatic or invokespecial
 				MethodReference targetRef = inst.getDeclaredTarget();
 				Set<CGNode> targets = environment.callGraph.getNodes(targetRef);
-				CGNode target = targets.iterator().next();				
+				CGNode target = targets.iterator().next();
 				return (results.isNodeProcessed(target) ? results.getResultsForNode(target) : analyzeNode(target));
 			}
 		} else if(costComputer.isInstructionInteresting(instruction)) {

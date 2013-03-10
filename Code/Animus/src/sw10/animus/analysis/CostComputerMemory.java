@@ -26,7 +26,6 @@ public class CostComputerMemory implements ICostComputer<CostResultMemory> {
 		try {
 			results.allocationCost = Math.round(lpResults.getObjective());
 		} catch (LpSolveException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		return results;

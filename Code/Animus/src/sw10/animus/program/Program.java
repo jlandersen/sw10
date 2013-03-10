@@ -26,8 +26,6 @@ public class Program {
 		AnalysisEnvironment environment = AnalysisEnvironmentBuilder.makeFromSpecification(specification);
 		Analyzer analyzer = Analyzer.makeAnalyzer(specification, environment);
 		analyzer.start((Class<? extends ICostComputer<ICostResult>>)CostComputerMemory.class);
-		
-		System.out.println("done...");
 	}
 	
 	private static AnalysisSpecification parseCommandLineArguments(String[] args) {
