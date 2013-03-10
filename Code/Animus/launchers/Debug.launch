@@ -7,6 +7,6 @@
 <listEntry value="1"/>
 </listAttribute>
 <stringAttribute key="org.eclipse.jdt.launching.MAIN_TYPE" value="sw10.animus.program.Program"/>
-<stringAttribute key="org.eclipse.jdt.launching.PROGRAM_ARGUMENTS" value="-jvmmodel &quot;model.json&quot; -application ${workspace_loc}/Application.jar -sources &quot;${sw10_home}/Code/Wala Exploration/src&quot; -output $(project_path)/output -entrypoint SimpleApplication"/>
+<stringAttribute key="org.eclipse.jdt.launching.PROGRAM_ARGUMENTS" value="-jvm_model &quot;model.json&quot; -application ${workspace_loc}/Application.jar -jar_includes_std_libraries false -source_files_root_dir &quot;${sw10_home}/Code/Wala Exploration/src&quot; -output_dir $(project_path)/output -entry_point SimpleApplication"/>
 <stringAttribute key="org.eclipse.jdt.launching.PROJECT_ATTR" value="Animus"/>
 </launchConfiguration>

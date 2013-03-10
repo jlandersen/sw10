@@ -10,10 +10,14 @@ public class SimpleApplication {
 	public static void main(String[] args) {
 		Object obj = goodbye(5);
 		if(args[0].equals("hello")) {
-			obj = new Object();
+			for(int i = 0; i < 20; i++) { //@ loopbound = 20
+				obj = new Object();	
+				obj.toString();
+			}
 		} else {
 			obj = new TrivialObject();
-			obj = new TrivialObject();
+			obj = new SimpleObject();
 		}
+		obj.toString();
 	}
 }
