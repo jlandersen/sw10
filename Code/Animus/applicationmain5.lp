@@ -3,7 +3,6 @@ max: bb0 bb1 bb2 bb3 bb4 bb5 bb6 bb7 bb8 bb9 bb10 bb11 bb12 bb13 bb14 bb15;
 
 /* flow constraints */
 f0 = 1;
-<<<<<<< HEAD
 f0 = f1 + ft0;
 f1 = f2 + f3;
 f3 = f4;
@@ -19,34 +18,13 @@ f13 = f14 + ft6;
 f14 = f15;
 f10 + f15 = ft7;
 ft0 + ft1 + ft2 + ft3 + ft4 + ft5 + ft6 + ft7 = 1;
-=======
-f0 = f1;
-f1 = f2 + f3;
-f3 = f4;
-f8 = f5;
-f5 = f6;
-f6 = f7;
-f4 + f7 = f8 + f9;
-f9 = f10;
-f2 = f11;
-f11 = f12;
-f12 = f13;
-f13 = f14;
-f14 = f15;
-f10 + f15 = ft;
-ft = 1;
->>>>>>> 5f9f89d3d8cb9ca763292d5e4b2681c7be932343
 
 /* loop constraints */
 f8 = 20 f4;
 
 /* allocation constraints */
 bb0 = 0 f0;
-<<<<<<< HEAD
 bb1 = 1043 f0;
-=======
-bb1 = -9223372036854775808 f0;
->>>>>>> 5f9f89d3d8cb9ca763292d5e4b2681c7be932343
 bb2 = 0 f1;
 bb3 = 0 f3;
 bb4 = 1 f8;
@@ -60,8 +38,4 @@ bb11 = 1 f12;
 bb12 = 0 f13;
 bb13 = 0 f14;
 bb14 = 0 f10 + 0 f15;
-<<<<<<< HEAD
 bb15 = 0 ft0 + 0 ft1 + 0 ft2 + 0 ft3 + 0 ft4 + 0 ft5 + 0 ft6 + 0 ft7;
-=======
-bb15 = 0 ft;
->>>>>>> 5f9f89d3d8cb9ca763292d5e4b2681c7be932343

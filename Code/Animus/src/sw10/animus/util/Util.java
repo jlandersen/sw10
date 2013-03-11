@@ -93,30 +93,6 @@ public class Util {
 		return Pair.make(g, edgeLabels);
 	}
 
-	/**
-	 * What are the exception types which s may throw?
-	 */
-	private static TypeReference[] computeExceptions(IClassHierarchy cha, IR ir, SSAInstruction s) throws InvalidClassFileException {
-		Collection c = null;
-		Language l = ir.getMethod().getDeclaringClass().getClassLoader().getLanguage();
-		if (s instanceof SSAInvokeInstruction) {
-			SSAInvokeInstruction call = (SSAInvokeInstruction) s;
-			c = l.inferInvokeExceptions(call.getDeclaredTarget(), cha);
-		} else {
-			c = s.getExceptionTypes();
-		}
-		if (c == null) {
-			return null;
-		} else {
-			TypeReference[] exceptions = new TypeReference[c.size()];
-			Iterator it = c.iterator();
-			for (int i = 0; i < exceptions.length; i++) {
-				exceptions[i] = (TypeReference) it.next();
-			}
-			return exceptions;
-		}
-	}
-
 	public static void CreatePDFCFG(SlowSparseNumberedLabeledGraph<ISSABasicBlock, String> cfg, ClassHierarchy cha, CGNode node) throws WalaException {
 		Properties wp = WalaProperties.loadProperties();
 		wp.putAll(WalaExamplesProperties.loadProperties());
