@@ -15,7 +15,10 @@ public class SimpleApplication {
 		try {
 			hey();
 		} catch (Exception e) {
-			Object h = new Object();
+			for(int i = 0; i < 500; i++) { //@ loopbound = 500
+				new Object();
+				new Object();
+			}
 		}
 	
 		if(x > 0)
