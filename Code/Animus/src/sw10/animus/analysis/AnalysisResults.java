@@ -1,7 +1,7 @@
 package sw10.animus.analysis;
 
+import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 import com.ibm.wala.ipa.callgraph.CGNode;
 
@@ -10,7 +10,7 @@ public class AnalysisResults {
 	private Map<CGNode, ICostResult> nodesProcessed;
 	
 	private AnalysisResults() {
-		this.nodesProcessed = new ConcurrentHashMap<CGNode, ICostResult>();
+		this.nodesProcessed = new HashMap<CGNode, ICostResult>();
 	}
 	
 	public static synchronized AnalysisResults getAnalysisResults() {

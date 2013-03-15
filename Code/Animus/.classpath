@@ -7,6 +7,9 @@
 	<classpathentry combineaccessrules="false" kind="src" path="/com.ibm.wala.shrike"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/com.ibm.wala.util"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/com.ibm.wala.core.tests"/>
+	<classpathentry kind="lib" path="libs/javailp-1.2a.jar"/>
 	<classpathentry kind="lib" path="libs/lpsolve55j.jar"/>
+	<classpathentry kind="lib" path="libs/gson-2.2.2.jar"/>
+	<classpathentry kind="lib" path="libs/velocity-1.7-dep.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

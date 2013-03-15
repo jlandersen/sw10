@@ -50,6 +50,7 @@ public class AnalysisEnvironmentBuilder {
 	CancelException {
 		AnalysisScope analysisScope = buildAnalysisScope();
 		ClassHierarchy classHierarchy = buildClassHierarchy(analysisScope);
+		
 		CallGraph callGraph = buildZeroXCFAAnalysis(analysisScope, classHierarchy);
 
 		return saveBuiltEnvironmentAsNewObject(analysisScope, classHierarchy, callGraph);
@@ -112,7 +113,7 @@ public class AnalysisEnvironmentBuilder {
 	}
 
 	private AnalysisOptions buildEntryPoint(AnalysisScope analysisScope, ClassHierarchy classHierarchy) {
-		Iterable<Entrypoint> entrypoints = Util.makeMainEntrypoints(analysisScope, classHierarchy, "L"+specification.getEntryPoint());
+		Iterable<Entrypoint> entrypoints = Util.makeMainEntrypoints(analysisScope, classHierarchy, "L"+specification.getMainClass());
 		AnalysisOptions options = new AnalysisOptions(analysisScope, entrypoints);
 		options.setReflectionOptions(ReflectionOptions.NONE);
 

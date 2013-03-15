@@ -1,0 +1,104 @@
+<!DOCTYPE HTML>
+<html>
+  <head>
+    <title>Auto-Generated HTML File</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Styles -->
+    <link href="/Users/Todberg/Documents/SW10/Code/Web/bootstrap/css/bootstrap.css" rel="stylesheet" media="screen">
+    <link rel="stylesheet" href="/Users/Todberg/Documents/SW10/Code/Web/fancyapps-fancyBox-0ffc358/source/jquery.fancybox.css" />
+    <link rel="stylesheet" href="/Users/Todberg/Documents/SW10/Code/Web/syntaxhighlighter_3.0.83/styles/shCoreDefault.css" />
+    <link rel="stylesheet" href="/Users/Todberg/Documents/SW10/Code/Web/jquery-ui-1.10.1.custom/css/south-street/jquery-ui-1.10.1.custom.css" />
+    <link rel="stylesheet" href="/Users/Todberg/Documents/SW10/Code/Web/styles.css" />
+    <!-- Scripts -->
+    <script src="/Users/Todberg/Documents/SW10/Code/Web/syntaxhighlighter_3.0.83/scripts/shCore.js"></script>
+    <script src="/Users/Todberg/Documents/SW10/Code/Web/syntaxhighlighter_3.0.83/scripts/shBrushJava.js"></script>
+    <script src="http://code.jquery.com/jquery.js"></script>
+    <script src="/Users/Todberg/Documents/SW10/Code/Web/jquery-ui-1.10.1.custom/js/jquery-ui-1.10.1.custom.min.js"></script>
+    <script src="/Users/Todberg/Documents/SW10/Code/Web/fancyapps-fancyBox-0ffc358/source/jquery.fancybox.pack.js"></script>
+    <script src="/Users/Todberg/Documents/SW10/Code/Web/bootstrap/js/bootstrap.min.js"></script>
+    <script src="/Users/Todberg/Documents/SW10/Code/Web/scripts.js"></script>
+  </head>
+  <body>
+    <div class="container">
+      <!-- Header -->
+      <div class="container-narrow">
+      <div class="masthead">
+        <ul class="nav nav-pills pull-right">
+          <li class="active"><a href="#">Home</a></li>
+          <li><a href="#">About</a></li>
+          <li><a href="#">Contact</a></li>
+        </ul>
+        <h3 class="muted">Analysis Report</h3>
+      </div>
+      <hr>
+      <!-- Navigation bar -->
+      <div class="navbar">
+        <div class="navbar-inner">
+          <div class="container">
+            <ul class="nav">
+              <li id="menuSummery" class="active"><a href="#" id="btnSummery">Summery</a></li>
+              <li id="menuCallgraph"><a href="#" id="btnCallgraph">Callgraph</a></li>
+              <li id="menuDetails"><a href="#" id="btnDetails">Details</a></li>
+            </ul>
+          </div>
+        </div>
+        <!-- Details Slider -->
+      </div>
+		<div id="detailsPanel">
+
+  			<div style="float:left; width:48%;">
+            <span class="label label-success">Classes</span>
+  	        <ul class="nav nav-pills nav-stacked">
+  		  			<li class="active"><a href="#">item 1</a></li>
+  	  				<li><a href="#">item 2</a></li>
+  		  		</ul>
+  			</div>
+  			<div style="float:left; width:50%; margin-left:2%;">
+          <span class="label label-success">Methods</span>
+  				<ul class="nav nav-pills nav-stacked">
+              <li class="active"><a href="#">item 1</a></li>
+              <li><a href="#">item 2</a></li>
+              <li><a href="#">item 2</a></li>
+              <li><a href="#">item 2</a></li>
+              <li><a href="#">item 2</a></li>
+          </ul>
+  			</div>
+	  	</div>
+	  	<div style="clear:both;"></div>
+      <!-- Content -->
+      <div class="hero-unit" id="content">
+        <div id="summery">
+        	<table class="table table-bordered table-striped">
+        		<tbody>
+        			<tr>
+        				<td>Application</td>
+        				<td>$application</td>
+        			</tr>
+      				<tr>
+      					<td># Classes</td>
+      					<td>$classes</td>
+      				</tr>
+      				<tr>
+      					<td># Methods</td>
+      					<td>$methods</td>
+      				</tr>
+      			</tbody>
+      		</table>
+        </div>
+        <div id="callgraph">$callgraph</div>
+        <div id="details">
+        	$code
+        	<script>SyntaxHighlighter.highlight();</script>
+        </div>
+      </div>
+      <!-- Footer -->
+      <hr>
+      <div class="footer" style="float:right;">
+        <p>Mikkel Todberg</p>
+        <p>Jeppe Lund Andersen</p>
+      </div>
+
+    </div>
+    </div>
+  </body>
+</html>

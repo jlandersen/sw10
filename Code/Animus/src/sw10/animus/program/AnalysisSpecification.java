@@ -1,6 +1,6 @@
 package sw10.animus.program;
 
-import sw10.animus.util.JVMModel;
+import sw10.animus.build.JVMModel;
 
 public class AnalysisSpecification {
 	public enum AnalysisType { ALL, STACK, ALLOCATIONS };
@@ -9,7 +9,8 @@ public class AnalysisSpecification {
 	private boolean jarIncludesStdLibraries;
 	private String sourceFilesRootDir;
 	private String outputDir;
-	private String entryPoint;
+	private String mainClass;
+	private String[] entryPoints;
 	private AnalysisType typeOfAnalysisPerformed;
 	private boolean shouldGenerateAnalysisReports;
 	private JVMModel jvmModel;
@@ -51,12 +52,20 @@ public class AnalysisSpecification {
 		this.outputDir = outputDir;
 	}
 	
-	public String getEntryPoint() {
-		return entryPoint;
+	public String getMainClass() {
+		return mainClass;
 	}
 	
-	public void setEntryPoint(String entryPoint) {
-		this.entryPoint = entryPoint;
+	public void setMainClass(String mainClass) {
+		this.mainClass = mainClass;
+	}
+	
+	public String[] getEntryPoints() {
+		return entryPoints;
+	}
+	
+	public void setEntryPoints(String methods) {
+		entryPoints = methods.split(",");		
 	}
 	
 	public AnalysisType getTypeOfAnalysisPerformed() {

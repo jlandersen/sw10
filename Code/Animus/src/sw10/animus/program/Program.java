@@ -1,6 +1,7 @@
 package sw10.animus.program;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
@@ -11,9 +12,9 @@ import sw10.animus.analysis.ICostComputer;
 import sw10.animus.analysis.ICostResult;
 import sw10.animus.build.AnalysisEnvironment;
 import sw10.animus.build.AnalysisEnvironmentBuilder;
+import sw10.animus.build.JVMModel;
 import sw10.animus.program.AnalysisSpecification.AnalysisType;
 import sw10.animus.util.Config;
-import sw10.animus.util.JVMModel;
 
 import com.ibm.wala.util.CancelException;
 import com.ibm.wala.util.WalaException;
@@ -21,7 +22,7 @@ import com.ibm.wala.util.io.CommandLine;
 
 public class Program {
 
-	public static void main(String[] args) throws IOException, IllegalArgumentException, CancelException, InstantiationException, IllegalAccessException, WalaException {
+	public static void main(String[] args) throws IOException, IllegalArgumentException, CancelException, InstantiationException, IllegalAccessException, WalaException, SecurityException, InvocationTargetException, NoSuchMethodException {
 		AnalysisSpecification specification = parseCommandLineArguments(args);
 		AnalysisEnvironment environment = AnalysisEnvironmentBuilder.makeFromSpecification(specification);
 		Analyzer analyzer = Analyzer.makeAnalyzer(specification, environment);
@@ -39,25 +40,26 @@ public class Program {
 		String jarIncludesStdLibraries = properties.getProperty(Config.COMMANDLINE_JARINCLUDESSTDLIBRARIES);
 		String sourceFilesRootDir = properties.getProperty(Config.COMMANDLINE_SOURCES);
 		String outputDir = properties.getProperty(Config.COMMANDLINE_OUTPUT);
-		String entryPoint = properties.getProperty(Config.COMMANDLINE_ENTRYPOINT);
+		String mainClass = properties.getProperty(Config.COMMANDLINE_MAINCLASS);
 		
 		/* Optional arguments */
 		String analysis = properties.getProperty(Config.COMMANDLINE_ANALYSIS);
 		String reports = properties.getProperty(Config.COMMANDLINE_REPORTS);
+		String entryPoints = properties.getProperty(Config.COMMANDLINE_ENTRYPOINTS);
 				
 		if(jvmModel == null || application == null 
 				|| jarIncludesStdLibraries == null || sourceFilesRootDir == null 
-				|| outputDir == null || entryPoint == null) {
+				|| outputDir == null || mainClass == null) {
 			printCommandLineUsage();
 		} else {
-			specification.setJvmModel(new JVMModel(jvmModel));
+			specification.setJvmModel(JVMModel.makeFromJson(jvmModel));
 			specification.setApplicationJar(application);
 			specification.setJarIncludesStdLibraries(jarIncludesStdLibraries.equalsIgnoreCase("true") ? true : false);
 			specification.setSourceFilesRootDir(sourceFilesRootDir);
 			specification.setOutputDirectoryForReports(outputDir);
 				
-			if(entryPoint != null) {
-				specification.setEntryPoint(entryPoint);
+			if(mainClass != null) {
+				specification.setMainClass(mainClass);
 			}
 			
 			if(analysis != null) {
@@ -71,7 +73,7 @@ public class Program {
 				} else {
 					printCommandLineUsage();
 				}
-
+				
 				specification.setTypeOfAnalysisPerformed(type);
 			}
 
@@ -87,6 +89,9 @@ public class Program {
 				
 				specification.setShouldGenerateAnalysisReports(report);
 			}
+			
+			if(entryPoints != null)
+				specification.setEntryPoints(entryPoints);
 		}	
 		
 		return specification;

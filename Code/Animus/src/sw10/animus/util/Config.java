@@ -7,7 +7,8 @@ public class Config {
 	public static final String COMMANDLINE_JARINCLUDESSTDLIBRARIES = "jar_includes_std_libraries";
 	public static final String COMMANDLINE_SOURCES = "source_files_root_dir";
 	public static final String COMMANDLINE_OUTPUT = "output_dir";
-	public static final String COMMANDLINE_ENTRYPOINT = "entry_point";
+	public static final String COMMANDLINE_MAINCLASS = "main_class";
+	public static final String COMMANDLINE_ENTRYPOINTS = "entry_points";
 	public static final String COMMANDLINE_ANALYSIS = "analysis";
 	public static final String COMMANDLINE_REPORTS = "reports";
 

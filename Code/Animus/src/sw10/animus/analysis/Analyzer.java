@@ -1,19 +1,29 @@
 package sw10.animus.analysis;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
-import lpsolve.LpSolve;
-import lpsolve.LpSolveException;
+import net.sf.javailp.Constraint;
+import net.sf.javailp.Linear;
+import net.sf.javailp.Operator;
+import net.sf.javailp.OptType;
+import net.sf.javailp.Problem;
+import net.sf.javailp.Result;
+import net.sf.javailp.Solver;
+import net.sf.javailp.SolverFactory;
+import net.sf.javailp.SolverFactoryLpSolve;
 import sw10.animus.analysis.loopanalysis.CFGLoopAnalyzer;
 import sw10.animus.build.AnalysisEnvironment;
+import sw10.animus.build.JVMModel;
 import sw10.animus.program.AnalysisSpecification;
-import sw10.animus.util.LpFileCreator;
-import sw10.animus.util.LpFileCreator.ObjectiveFunction;
 import sw10.animus.util.Util;
 import sw10.animus.util.annotationextractor.extractor.AnnotationExtractor;
 import sw10.animus.util.annotationextractor.parser.Annotation;
@@ -29,6 +39,7 @@ import com.ibm.wala.ssa.ISSABasicBlock;
 import com.ibm.wala.ssa.SSAInstruction;
 import com.ibm.wala.ssa.SSAInvokeInstruction;
 import com.ibm.wala.types.MethodReference;
+import com.ibm.wala.types.TypeName;
 import com.ibm.wala.util.WalaException;
 import com.ibm.wala.util.collections.Iterator2Iterable;
 import com.ibm.wala.util.collections.Pair;
@@ -37,6 +48,7 @@ import com.ibm.wala.util.graph.labeled.SlowSparseNumberedLabeledGraph;
 import com.ibm.wala.util.graph.traverse.BFSIterator;
 import com.ibm.wala.util.intset.IntIterator;
 import com.ibm.wala.util.intset.IntSet;
+import com.ibm.wala.util.strings.StringStuff;
 
 public class Analyzer {
 
@@ -57,21 +69,41 @@ public class Analyzer {
 	public static Analyzer makeAnalyzer(AnalysisSpecification specification, AnalysisEnvironment environment) {
 		return new Analyzer(specification, environment);
 	}
-	
-	public void start(Class<? extends ICostComputer<ICostResult>> costComputerType) throws InstantiationException, IllegalAccessException, IllegalArgumentException, WalaException, IOException {
+
+	public void start(Class<? extends ICostComputer<ICostResult>> costComputerType) throws InstantiationException, IllegalAccessException, IllegalArgumentException, WalaException, IOException, SecurityException, InvocationTargetException, NoSuchMethodException {
 		this.costComputerType = costComputerType;
-		costComputer = this.costComputerType.newInstance();
-		CGNode entryNode = environment.callGraph.getEntrypointNodes().iterator().next();
-		ICostResult results = analyzeNode(entryNode);
-		System.out.println("Worst case allocation:" + results.getCostScalar());
+		this.costComputer = costComputerType.getDeclaredConstructor(JVMModel.class).newInstance(specification.getJvmModel());
+
+		if (specification.getEntryPoints() == null) {
+			CGNode entryNode = environment.callGraph.getEntrypointNodes().iterator().next();
+			System.out.println(entryNode.getMethod().toString());
+			ICostResult results = analyzeNode(entryNode);
+			System.out.println("Worst case allocation:" + results.getCostScalar());
+		}
+		else
+		{
+			for(String entryPoint : specification.getEntryPoints()) {
+				MethodReference mr = StringStuff.makeMethodReference(entryPoint);
+				CGNode entryNode = environment.callGraph.getNodes(mr).iterator().next();
+				ICostResult results = analyzeNode(entryNode);
+				CostResultMemory memRes = (CostResultMemory)results;
+				for(Entry<TypeName, Integer> i : memRes.countByTypename.entrySet()) {
+					System.out.println(i.getKey().toString() + " - " + i.getValue());
+				}
+				
+				System.out.println("Worst case allocation for " + entryNode.getMethod().toString() + ":" + results.getCostScalar());
+			}
+		}
 	}
 
 	public ICostResult analyzeNode(CGNode cgNode) {
-		IMethod method = cgNode.getMethod();
+		if (results.isNodeProcessed(cgNode)) {
+			return results.getResultsForNode(cgNode);
+		}
 		
-		System.out.println(method.toString());
+		IMethod method = cgNode.getMethod();
 		IR ir = cgNode.getIR();
-
+		
 		Pair<SlowSparseNumberedLabeledGraph<ISSABasicBlock, String>, Map<String, Pair<Integer, Integer>>> sanitized = null;
 		try {
 			sanitized = Util.sanitize(ir, environment.classHierarchy);
@@ -80,35 +112,38 @@ public class Analyzer {
 		}
 		SlowSparseNumberedLabeledGraph<ISSABasicBlock, String> cfg = sanitized.fst;
 		Map<String, Pair<Integer, Integer>> edgeLabelToNodesIDs = sanitized.snd;
+
+		Map<Integer, Annotation> annotationByLineNumber = getAnnotations(method);
+		Map<Integer, ArrayList<Integer>> loopBlocksByHeaderBlockId = getLoops(cfg, ir.getControlFlowGraph().entry());
 		
-		
-		if (method.getName().toString().equals("hey")) {
+		if (method.toString().contains("hey")) {
 			try {
 				Util.CreatePDFCFG(cfg, environment.classHierarchy, cgNode);
 			} catch (WalaException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
-		
-		Map<Integer, Annotation> annotationByLineNumber = getAnnotations(method);
-		Map<Integer, ArrayList<Integer>> loopBlocksByHeaderBlockId = getLoops(cfg, ir.getControlFlowGraph().entry());
 
-		LpFileCreator lpFileCreator = null;
-		try {
-			lpFileCreator = new LpFileCreator("./", "application" + cgNode.getMethod().getName() + cgNode.getGraphNodeId() + ".lp");
-		} catch (IOException e) {
-		}
-
-		lpFileCreator.setObjectiveFunction(ObjectiveFunction.MAX);
+		/* LPSolver */
+		SolverFactory factory = new SolverFactoryLpSolve();
+		factory.setParameter(Solver.VERBOSE, 0);
+		Problem problem = new Problem();
+		Linear objective = new Linear();
+		Linear linear;
+		Constraint constraint;
+		String variable;
 
 		BFSIterator<ISSABasicBlock> iteratorBFSOrdering = new BFSIterator<ISSABasicBlock>(cfg);
-
+		Map<Integer, ICostResult> calleeNodeResultsByBlockGraphId = new HashMap<Integer, ICostResult>();
+		Set<ICostResult> calleeNodeResultsAlreadyFound = new HashSet<ICostResult>();
+		
 		ICostResult intermediateResults = null;
 
 		while(iteratorBFSOrdering.hasNext()) {
 			ISSABasicBlock currentBlock = iteratorBFSOrdering.next();
-			lpFileCreator.addObjective("bb" + currentBlock.getGraphNodeId());
+			variable = "bb" + currentBlock.getGraphNodeId();
+			objective.add(1, variable);
+			problem.setVarType(variable, Integer.class);
 
 			Iterator<? extends String> IteratorOutgoingLabels = (Iterator<? extends String>)cfg.getSuccLabels(currentBlock);
 			Iterator<? extends String> IteratorIncomingLabels = (Iterator<? extends String>)cfg.getPredLabels(currentBlock);
@@ -118,93 +153,93 @@ public class Analyzer {
 			while (IteratorOutgoingLabels.hasNext()) {
 				String edgeLabel = IteratorOutgoingLabels.next();
 				outgoing.add(edgeLabel);
+				problem.setVarType(edgeLabel, Integer.class);
 			}
 
 			while (IteratorIncomingLabels.hasNext()) {
 				String edgeLabel = IteratorIncomingLabels.next();
 				incoming.add(edgeLabel);
+				problem.setVarType(edgeLabel, Integer.class);
 			}
-
-			String flowConstraint = "";
-			String allocConstraint = "";
-			String loopConstraint = "";
-			boolean didAddLoop = false;
 
 			if (currentBlock.isEntryBlock()) {
-				flowConstraint = "f0 = 1";
-				allocConstraint = "bb0 = 0 f0";
+				linear = new Linear();
+				linear.add(1, "f0");
+				constraint = new Constraint(linear, Operator.EQ, 1);
+				problem.add(constraint);
+				problem.setVarType("f0", Integer.class);
+				linear = new Linear();
+				linear.add(0, "f0");
+				linear.add(-1, "bb0");
+				constraint = new Constraint(linear, Operator.EQ, 0);		
+				problem.add(constraint);
 			}
-			else if (currentBlock.isExitBlock()) {
-    			allocConstraint += "bb" + currentBlock.getGraphNodeId() + " = ";
-    			Iterator<String> IteratorIncoming = incoming.iterator();
-    			while(IteratorIncoming.hasNext()) {
-    				String incommingLabel = IteratorIncoming.next();
-    				flowConstraint += incommingLabel;
-    				allocConstraint += "0 " + incommingLabel;
-    				if(IteratorIncoming.hasNext()) {
-    					flowConstraint += " + ";
-    					allocConstraint += " + ";
-    				}
-    			}
-    			flowConstraint += " = 1";
+			else if (currentBlock.isExitBlock()) { 
+				Linear alloc = new Linear();
+				Linear flow = new Linear();
+				variable = "bb" + currentBlock.getGraphNodeId();
+				alloc.add(-1, variable);
+				Iterator<String> IteratorIncoming = incoming.iterator();
+				while(IteratorIncoming.hasNext()) {
+					String incommingLabel = IteratorIncoming.next();
+					flow.add(1, incommingLabel);
+					alloc.add(0, incommingLabel);
+				} 			
+				constraint = new Constraint(alloc, Operator.EQ, 0);
+				problem.add(constraint);
+				constraint = new Constraint(flow, Operator.EQ, 1);
+				problem.add(constraint);
 			}
 			else
 			{
 				ICostResult costForBlock = analyzeBasicBlock(currentBlock, cgNode);
 				if (costForBlock != null) {
-					if (intermediateResults != null) {
-						costComputer.addCost(costForBlock, intermediateResults);
+					
+					if (costForBlock.isFinalNodeResult() && !calleeNodeResultsAlreadyFound.contains(costForBlock)) {
+						calleeNodeResultsByBlockGraphId.put(currentBlock.getGraphNodeId(), costForBlock);
+						calleeNodeResultsAlreadyFound.add(costForBlock);
 					}
-					else
-					{
-						intermediateResults = costForBlock;	
+					
+					if (intermediateResults != null) {
+						if (costForBlock.isFinalNodeResult()) {
+							costComputer.addCost(costForBlock, intermediateResults);	
+						}
+						else
+						{
+							costComputer.addCostAndContext(costForBlock, intermediateResults);
+						}
+						
+					}
+					else {
+						intermediateResults = costForBlock.clone();
 					}
 				}
-				
-	   			StringBuilder lhs = new StringBuilder(outgoing.size()*4);
-    			StringBuilder rhs = new StringBuilder(incoming.size()*4);
-    			StringBuilder allocRhs = new StringBuilder(incoming.size()*8);
-    			StringBuilder loopLhs = new StringBuilder(incoming.size()*4);
-    			StringBuilder loopRhs = new StringBuilder(outgoing.size()*4);
-    			
-    			int edgeIndex = 0;
-    			for (String incomingLabel : incoming) {
-    				lhs.append(incomingLabel);
-    				if (costForBlock != null) {
-    					allocRhs.append(costForBlock.getCostScalar() + " " + incomingLabel);
-    				}
-    				else
-    				{
-    					allocRhs.append("0 " + incomingLabel);
-    				}
-    				
-    				if (edgeIndex != incoming.size() - 1) {
-    					lhs.append(" + ");
-    					allocRhs.append(" + ");
-    				}
-    				
-    				edgeIndex++;
-    			}
-    			
-    			edgeIndex = 0;
-    			for (String outgoingLabel : outgoing) {
-    				rhs.append(outgoingLabel);
-    				
-    				if (edgeIndex != outgoing.size() - 1) {
-    					rhs.append(" + ");
-    				}
-    				
-    				edgeIndex++;
-    			}
-    			
-    			if (loopBlocksByHeaderBlockId.containsKey(currentBlock.getGraphNodeId())) {
-    				didAddLoop = true;
-    				ArrayList<Integer> loopBlocks = loopBlocksByHeaderBlockId.get(currentBlock.getGraphNodeId());
-    				IntSet loopHeaderSuccessors = cfg.getSuccNodeNumbers(currentBlock);
-    				IntSet loopHeaderAncestors = cfg.getPredNodeNumbers(currentBlock);
-    				
-    				int lineNumberForLoop = 0;
-    				String boundForLoop = "";
+
+				Linear flow = new Linear();
+				Linear alloc = new Linear();
+				Linear loop = new Linear();
+
+				for (String incomingLabel : incoming) {
+					flow.add(1, incomingLabel);
+					if (costForBlock != null) {
+						alloc.add(costForBlock.getCostScalar(), incomingLabel);
+					}
+					else {
+						alloc.add(0, incomingLabel);
+					}
+				}
+
+				for (String outgoingLabel : outgoing) {
+					flow.add(-1, outgoingLabel);
+				}
+
+				if (loopBlocksByHeaderBlockId.containsKey(currentBlock.getGraphNodeId())) {
+					ArrayList<Integer> loopBlocks = loopBlocksByHeaderBlockId.get(currentBlock.getGraphNodeId());
+					IntSet loopHeaderSuccessors = cfg.getSuccNodeNumbers(currentBlock);
+					IntSet loopHeaderAncestors = cfg.getPredNodeNumbers(currentBlock);
+
+					int lineNumberForLoop = 0;
+					String boundForLoop = "";
 					try {
 						IBytecodeMethod bytecodeMethod = (IBytecodeMethod)cgNode.getMethod();
 						lineNumberForLoop = bytecodeMethod.getLineNumber(bytecodeMethod.getBytecodeIndex(currentBlock.getFirstInstructionIndex()));
@@ -215,57 +250,46 @@ public class Analyzer {
 						}
 					} catch (InvalidClassFileException e) {
 					}    	
-    				
-    				for(int i : loopBlocks) {
-    					if (loopHeaderSuccessors.contains(i)) {
-    						loopLhs.append(cfg.getEdgeLabels(currentBlock, cfg.getNode(i)).iterator().next());
-    						break;
-    					}
-    				}
-    				
-    				IntIterator ancestorGraphIds = loopHeaderAncestors.intIterator();
-    				while (ancestorGraphIds.hasNext()) {
-    					int ancestorID = ancestorGraphIds.next();
-    					if (!loopBlocks.contains(ancestorID)) {
-    						loopRhs.append(boundForLoop + " " + cfg.getEdgeLabels(cfg.getNode(ancestorID), currentBlock).iterator().next());
-    					}
-    				}
-    			}
-    			
-    			flowConstraint = lhs + " = " + rhs;
-    			allocConstraint = "bb" + currentBlock.getGraphNodeId() + " = " + allocRhs;
-    			loopConstraint = loopLhs + " = " + loopRhs;
+
+					for(int i : loopBlocks) {
+						if (loopHeaderSuccessors.contains(i)) {
+							loop.add(-1, cfg.getEdgeLabels(currentBlock, cfg.getNode(i)).iterator().next());
+							break;
+						}
+					}
+
+					IntIterator ancestorGraphIds = loopHeaderAncestors.intIterator();
+					while (ancestorGraphIds.hasNext()) {
+						int ancestorID = ancestorGraphIds.next();
+						if (!loopBlocks.contains(ancestorID)) {
+							loop.add(Integer.parseInt(boundForLoop), cfg.getEdgeLabels(cfg.getNode(ancestorID), currentBlock).iterator().next());
+						}
+					}
+
+					constraint = new Constraint(loop, Operator.EQ, 0);
+					problem.add(constraint);
+				}
+
+				constraint = new Constraint(flow, Operator.EQ, 0);
+				problem.add(constraint);
+
+				alloc.add(-1, "bb" + currentBlock.getGraphNodeId());
+				constraint = new Constraint(alloc, Operator.EQ, 0);
+				problem.add(constraint);  			
 			}
-			
-			lpFileCreator.addFlowContraint(flowConstraint);
-    		if (didAddLoop) {
-    			lpFileCreator.addLoopContraint(loopConstraint);
-    			didAddLoop = false;
-    		}
-    		lpFileCreator.addAllocationContraint(allocConstraint);
 		}
-		
-		LpSolve solver = null;
-		try {
-			lpFileCreator.writeFile();
-			solver = LpSolve.readLp("application" + cgNode.getMethod().getName() + cgNode.getGraphNodeId() + ".lp", 1, null);
-	    	solver.solve();
-	    	System.out.println("LPSolve result for " + cgNode.getMethod().getName() + ", " + cgNode.getMethod().getDeclaringClass().getName() +  ": " + Math.round(solver.getObjective()));
-		} catch (IOException e) {
-			e.printStackTrace();
-		} catch (LpSolveException e) {
-			System.out.println("LPSolve FAILED for " + cgNode.getMethod().getName() + ", " + cgNode.getMethod().getDeclaringClass().getName());
-			e.printStackTrace();
-		}
-		
+
+		problem.setObjective(objective, OptType.MAX);
+		Solver solver = factory.get();
+		Result result = solver.solve(problem);
 		
 		if (intermediateResults == null) {
 			intermediateResults = new CostResultMemory();
 		}
-				
-		ICostResult finalResults = costComputer.getFinalResultsFromContextResultsAndLPSolutions(intermediateResults, solver);
+		
+		ICostResult finalResults = costComputer.getFinalResultsFromContextResultsAndLPSolutions(intermediateResults, result, problem, edgeLabelToNodesIDs, calleeNodeResultsByBlockGraphId);
 		results.saveResultForNode(cgNode, finalResults);
-
+	
 		return finalResults;
 	}
 
@@ -279,8 +303,7 @@ public class Analyzer {
 				if (costForBlock != null) {
 					costComputer.addCost(costForInstruction, costForBlock);
 				}
-				else
-				{
+				else {
 					costForBlock = costForInstruction;
 				}
 			}
@@ -291,17 +314,17 @@ public class Analyzer {
 
 	private ICostResult analyzeInstruction(SSAInstruction instruction, ISSABasicBlock block, CGNode node) {
 		ICostResult costForInstruction = null;
-		
+
 		if(instruction instanceof SSAInvokeInstruction) {
 			SSAInvokeInstruction inst = (SSAInvokeInstruction)instruction;
 			if(inst.isDispatch()) {	// invokevirtual
 				CallSiteReference callSiteRef = inst.getCallSite();
 				Set<CGNode> possibleTargets = environment.callGraph.getPossibleTargets(node, callSiteRef);
-				ICostResult maximumResult = new CostResultMemory();
+				ICostResult maximumResult = null;
 				ICostResult tempResult = null;
 				for(CGNode target : Iterator2Iterable.make(possibleTargets.iterator())) {
-					tempResult = (results.isNodeProcessed(target) ? results.getResultsForNode(target) : analyzeNode(target));			
-					if(tempResult.getCostScalar() > maximumResult.getCostScalar())
+					tempResult = analyzeNode(target);
+					if(maximumResult == null || tempResult.getCostScalar() > maximumResult.getCostScalar())
 						maximumResult = tempResult;
 				}
 				return maximumResult;
@@ -309,7 +332,7 @@ public class Analyzer {
 				MethodReference targetRef = inst.getDeclaredTarget();
 				Set<CGNode> targets = environment.callGraph.getNodes(targetRef);
 				CGNode target = targets.iterator().next();
-				return (results.isNodeProcessed(target) ? results.getResultsForNode(target) : analyzeNode(target));
+				return analyzeNode(target);
 			}
 		} else if(costComputer.isInstructionInteresting(instruction)) {
 			costForInstruction = costComputer.getCostForInstructionInBlock(instruction, block, node);
@@ -346,4 +369,3 @@ public class Analyzer {
 	}
 }
 
-	
