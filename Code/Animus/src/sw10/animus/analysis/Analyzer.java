@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -25,6 +26,10 @@ import sw10.animus.analysis.loopanalysis.CFGLoopAnalyzer;
 import sw10.animus.build.AnalysisEnvironment;
 import sw10.animus.build.JVMModel;
 import sw10.animus.program.AnalysisSpecification;
+import sw10.animus.reports.Compactor;
+import sw10.animus.reports.Compactor.Node;
+import sw10.animus.reports.Compactor.Source;
+import sw10.animus.reports.ReportGenerator;
 import sw10.animus.util.Util;
 import sw10.animus.util.annotationextractor.extractor.AnnotationExtractor;
 import sw10.animus.util.annotationextractor.parser.Annotation;
@@ -75,6 +80,11 @@ public class Analyzer {
 		this.costComputerType = costComputerType;
 		this.costComputer = costComputerType.getDeclaredConstructor(JVMModel.class).newInstance(specification.getJvmModel());
 
+		/* Reports */
+		HashMap<Node, LinkedList<Node>> entries = new HashMap<Node, LinkedList<Node>>();
+		Compactor compactor = new Compactor();
+		Node node;
+		
 		if (specification.getEntryPoints() == null) {
 			CGNode entryNode = environment.callGraph.getEntrypointNodes().iterator().next();
 			System.out.println(entryNode.getMethod().toString());
@@ -100,8 +110,39 @@ public class Analyzer {
 				}
 				
 				System.out.println("Worst case allocation for " + entryNode.getMethod().toString() + ":" + results.getCostScalar());
+				
+				/* Reports */
+				node = compactor.new Node();
+				node.cgNode = entryNode;
+				node.costResult = results;
+				entries.put(node, null);
 			}
 		}
+		
+		/* Testing reports */
+		ReportGenerator gen = new ReportGenerator("/Users/Todberg/Documents/output", environment, specification);
+		ArrayList<Integer> lineNumbers = new ArrayList<Integer>();
+		lineNumbers.add(3);
+		lineNumbers.add(4);
+		lineNumbers.add(5);
+		ArrayList<Integer> methodSignatureLineNumbers = new ArrayList<Integer>();
+		methodSignatureLineNumbers.add(3);
+		
+		Source source = compactor.new Source("/Users/Todberg/Documents/SW10/Code/Wala Exploration/src/SimpleApplication.java", lineNumbers, methodSignatureLineNumbers);
+		
+		ArrayList<Integer> lineNumbers2 = new ArrayList<Integer>();
+		lineNumbers2.add(30);
+		lineNumbers2.add(31);
+		lineNumbers2.add(32);
+		ArrayList<Integer> methodSignatureLineNumbers2 = new ArrayList<Integer>();
+		methodSignatureLineNumbers2.add(30);
+		Source source2 = compactor.new Source("/Users/Todberg/Documents/SW10/Code/Wala Exploration/src/SimpleApplication.java", lineNumbers2, methodSignatureLineNumbers2);
+		
+		HashMap<Source, HashMap<Node, LinkedList<Node>>> results = new HashMap<Compactor.Source, HashMap<Node,LinkedList<Node>>>();
+		results.put(source2, entries);
+		results.put(source, entries);
+		
+		gen.Generate(results);
 	}
 
 	public ICostResult analyzeNode(CGNode cgNode) {

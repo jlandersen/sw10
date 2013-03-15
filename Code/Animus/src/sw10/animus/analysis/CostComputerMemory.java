@@ -67,7 +67,7 @@ public class CostComputerMemory implements ICostComputer<CostResultMemory> {
 							results.countByTypename.put(typeName, lpResults.getPrimalValue(var).intValue());
 						}
 					}
-					
+					/*
 					if (calleeResultsAtGraphNodeIdByResult.containsKey(blockDstID)) {
 						CostResultMemory memRes = (CostResultMemory)calleeResultsAtGraphNodeIdByResult.get(blockDstID);
 						for(Entry<TypeName, Integer> typeAllocatedInCallee : memRes.countByTypename.entrySet()) {
@@ -82,6 +82,7 @@ public class CostComputerMemory implements ICostComputer<CostResultMemory> {
 							}							
 						}
 					}
+					*/
 				}
 			}
 		}
