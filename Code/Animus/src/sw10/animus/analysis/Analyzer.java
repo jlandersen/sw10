@@ -1,5 +1,6 @@
 package sw10.animus.analysis;
 
+import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
@@ -9,8 +10,8 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.Map.Entry;
+import java.util.NoSuchElementException;
 import java.util.Set;
 
 import net.sf.javailp.Constraint;
@@ -60,24 +61,22 @@ public class Analyzer {
 
 	private AnalysisSpecification specification;
 	private AnnotationExtractor extractor;
-	private Class<? extends ICostComputer<ICostResult>> costComputerType;
 	private ICostComputer<ICostResult> costComputer;
 	private AnalysisEnvironment environment;
 	private AnalysisResults results;
 
-	private Analyzer(AnalysisSpecification specification, AnalysisEnvironment environment) {
-		this.environment = environment;
-		this.specification = specification;
+	private Analyzer() {
+		this.environment = AnalysisEnvironment.getAnalysisEnvironment();
+		this.specification = AnalysisSpecification.getAnalysisSpecification();
 		this.extractor = new AnnotationExtractor();		
 		this.results = AnalysisResults.getAnalysisResults();
 	}
 
-	public static Analyzer makeAnalyzer(AnalysisSpecification specification, AnalysisEnvironment environment) {
-		return new Analyzer(specification, environment);
+	public static Analyzer makeAnalyzer() {
+		return new Analyzer();
 	}
 
 	public void start(Class<? extends ICostComputer<ICostResult>> costComputerType) throws InstantiationException, IllegalAccessException, IllegalArgumentException, WalaException, IOException, SecurityException, InvocationTargetException, NoSuchMethodException {
-		this.costComputerType = costComputerType;
 		this.costComputer = costComputerType.getDeclaredConstructor(JVMModel.class).newInstance(specification.getJvmModel());
 
 		/* Reports */
@@ -86,7 +85,7 @@ public class Analyzer {
 		Node node;
 		
 		if (specification.getEntryPoints() == null) {
-			CGNode entryNode = environment.callGraph.getEntrypointNodes().iterator().next();
+			CGNode entryNode = environment.getCallGraph().getEntrypointNodes().iterator().next();
 			System.out.println(entryNode.getMethod().toString());
 			ICostResult results = analyzeNode(entryNode);
 			System.out.println("Worst case allocation:" + results.getCostScalar());
@@ -97,19 +96,18 @@ public class Analyzer {
 				MethodReference mr = StringStuff.makeMethodReference(entryPoint);
 				CGNode entryNode = null;
 				try {
-					entryNode = environment.callGraph.getNodes(mr).iterator().next();
+					entryNode = environment.getCallGraph().getNodes(mr).iterator().next();
 				}
 				catch (NoSuchElementException e) {
 					System.err.println(entryPoint + " is not part of the call graph!");
 					continue;
 				}
 				ICostResult results = analyzeNode(entryNode);
-				CostResultMemory memRes = (CostResultMemory)results;
-				for(Entry<TypeName, Integer> i : memRes.countByTypename.entrySet()) {
-					System.out.println(i.getKey().toString() + " - " + i.getValue());
-				}
-				
+				CostResultMemory memRes = (CostResultMemory)results;				
 				System.out.println("Worst case allocation for " + entryNode.getMethod().toString() + ":" + results.getCostScalar());
+				for(Entry<TypeName, Integer> i : memRes.countByTypename.entrySet()) {
+					System.out.println("\t" + i.getKey().toString() + " - " + i.getValue());
+				}
 				
 				/* Reports */
 				node = compactor.new Node();
@@ -118,9 +116,9 @@ public class Analyzer {
 				entries.put(node, null);
 			}
 		}
-		
+
 		/* Testing reports */
-		ReportGenerator gen = new ReportGenerator("/Users/Todberg/Documents/output", environment, specification);
+		ReportGenerator gen = new ReportGenerator(environment, specification);
 		ArrayList<Integer> lineNumbers = new ArrayList<Integer>();
 		lineNumbers.add(3);
 		lineNumbers.add(4);
@@ -128,7 +126,8 @@ public class Analyzer {
 		ArrayList<Integer> methodSignatureLineNumbers = new ArrayList<Integer>();
 		methodSignatureLineNumbers.add(3);
 		
-		Source source = compactor.new Source("/Users/Todberg/Documents/SW10/Code/Wala Exploration/src/SimpleApplication.java", lineNumbers, methodSignatureLineNumbers);
+		String path = specification.getSourceFilesRootDir() + File.separatorChar;
+		Source source = compactor.new Source(path + "SimpleApplication.java", lineNumbers, methodSignatureLineNumbers);
 		
 		ArrayList<Integer> lineNumbers2 = new ArrayList<Integer>();
 		lineNumbers2.add(30);
@@ -136,7 +135,7 @@ public class Analyzer {
 		lineNumbers2.add(32);
 		ArrayList<Integer> methodSignatureLineNumbers2 = new ArrayList<Integer>();
 		methodSignatureLineNumbers2.add(30);
-		Source source2 = compactor.new Source("/Users/Todberg/Documents/SW10/Code/Wala Exploration/src/SimpleApplication.java", lineNumbers2, methodSignatureLineNumbers2);
+		Source source2 = compactor.new Source(path + "SimpleApplication.java", lineNumbers2, methodSignatureLineNumbers2);
 		
 		HashMap<Source, HashMap<Node, LinkedList<Node>>> results = new HashMap<Compactor.Source, HashMap<Node,LinkedList<Node>>>();
 		results.put(source2, entries);
@@ -155,7 +154,7 @@ public class Analyzer {
 		
 		Pair<SlowSparseNumberedLabeledGraph<ISSABasicBlock, String>, Map<String, Pair<Integer, Integer>>> sanitized = null;
 		try {
-			sanitized = Util.sanitize(ir, environment.classHierarchy);
+			sanitized = Util.sanitize(ir, environment.getClassHierarchy());
 		} catch (IllegalArgumentException e) {
 		} catch (WalaException e) {
 		}
@@ -164,14 +163,6 @@ public class Analyzer {
 
 		Map<Integer, Annotation> annotationByLineNumber = getAnnotations(method);
 		Map<Integer, ArrayList<Integer>> loopBlocksByHeaderBlockId = getLoops(cfg, ir.getControlFlowGraph().entry());
-		
-		if (method.toString().contains("hey")) {
-			try {
-				Util.CreatePDFCFG(cfg, environment.classHierarchy, cgNode);
-			} catch (WalaException e) {
-				e.printStackTrace();
-			}
-		}
 
 		/* LPSolver */
 		SolverFactory factory = new SolverFactoryLpSolve();
@@ -260,7 +251,13 @@ public class Analyzer {
 						
 					}
 					else {
-						intermediateResults = costForBlock.clone();
+						if (costForBlock.isFinalNodeResult()) {
+							intermediateResults = costForBlock.clone();
+						}
+						else {
+							intermediateResults = costForBlock.cloneTemporaryResult();
+						}
+												
 					}
 				}
 
@@ -331,12 +328,9 @@ public class Analyzer {
 		problem.setObjective(objective, OptType.MAX);
 		Solver solver = factory.get();
 		Result result = solver.solve(problem);
-		
-		if (intermediateResults == null) {
-			intermediateResults = new CostResultMemory();
-		}
-		
-		ICostResult finalResults = costComputer.getFinalResultsFromContextResultsAndLPSolutions(intermediateResults, result, problem, edgeLabelToNodesIDs, calleeNodeResultsByBlockGraphId);
+				
+		ICostResult finalResults;
+		finalResults = costComputer.getFinalResultsFromContextResultsAndLPSolutions(intermediateResults, result, problem, edgeLabelToNodesIDs, calleeNodeResultsByBlockGraphId, cgNode);
 		results.saveResultForNode(cgNode, finalResults);
 	
 		return finalResults;
@@ -350,7 +344,7 @@ public class Analyzer {
 
 			if (costForInstruction != null) {
 				if (costForBlock != null) {
-					costComputer.addCost(costForInstruction, costForBlock);
+					costComputer.addCostAndContext(costForInstruction, costForBlock);
 				}
 				else {
 					costForBlock = costForInstruction;
@@ -368,7 +362,7 @@ public class Analyzer {
 			SSAInvokeInstruction inst = (SSAInvokeInstruction)instruction;
 			if(inst.isDispatch()) {	// invokevirtual
 				CallSiteReference callSiteRef = inst.getCallSite();
-				Set<CGNode> possibleTargets = environment.callGraph.getPossibleTargets(node, callSiteRef);
+				Set<CGNode> possibleTargets = environment.getCallGraph().getPossibleTargets(node, callSiteRef);
 				ICostResult maximumResult = null;
 				ICostResult tempResult = null;
 				for(CGNode target : Iterator2Iterable.make(possibleTargets.iterator())) {
@@ -379,7 +373,7 @@ public class Analyzer {
 				return maximumResult;
 			} else { // invokestatic or invokespecial
 				MethodReference targetRef = inst.getDeclaredTarget();
-				Set<CGNode> targets = environment.callGraph.getNodes(targetRef);
+				Set<CGNode> targets = environment.getCallGraph().getNodes(targetRef);
 				CGNode target = targets.iterator().next();
 				return analyzeNode(target);
 			}

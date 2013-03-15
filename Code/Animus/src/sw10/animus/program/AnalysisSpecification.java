@@ -4,7 +4,7 @@ import sw10.animus.build.JVMModel;
 
 public class AnalysisSpecification {
 	public enum AnalysisType { ALL, STACK, ALLOCATIONS };
-	
+	private static AnalysisSpecification singletonObject;
 	private String applicationJar;
 	private boolean jarIncludesStdLibraries;
 	private String sourceFilesRootDir;
@@ -15,9 +15,16 @@ public class AnalysisSpecification {
 	private boolean shouldGenerateAnalysisReports;
 	private JVMModel jvmModel;
 	
-	public AnalysisSpecification() {
+	private AnalysisSpecification() {
 		this.typeOfAnalysisPerformed = AnalysisType.ALL;
 		this.shouldGenerateAnalysisReports = true;
+	}
+	
+	public static synchronized AnalysisSpecification getAnalysisSpecification() {
+		if (singletonObject == null) {
+			singletonObject = new AnalysisSpecification();
+		}
+		return singletonObject;
 	}
 	
 	public String getApplicationJar() {

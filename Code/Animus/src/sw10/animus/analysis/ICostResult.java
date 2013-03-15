@@ -12,4 +12,5 @@ public interface ICostResult {
 	long getCostScalar();
 	void resetCostScalar();
 	ICostResult clone();
+	ICostResult cloneTemporaryResult();
 }

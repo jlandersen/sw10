@@ -15,6 +15,6 @@ public interface ICostComputer<T extends ICostResult> {
 	T getCostForInstructionInBlock(SSAInstruction instruction, ISSABasicBlock block, CGNode node);
 	void addCost(T fromResult, T toResult);
 	void addCostAndContext(T fromResult, T toResult);
-	T getFinalResultsFromContextResultsAndLPSolutions(T resultsContext, Result result, Problem problem, Map<String, Pair<Integer, Integer>> edgeLabelToNodesIDs, Map<Integer, ICostResult> calleeResultsAtGraphNodeIdByResult);
+	T getFinalResultsFromContextResultsAndLPSolutions(T resultsContext, Result result, Problem problem, Map<String, Pair<Integer, Integer>> edgeLabelToNodesIDs, Map<Integer, ICostResult> calleeResultsAtGraphNodeIdByResult, CGNode cgNode);
 	public boolean isInstructionInteresting(SSAInstruction instruction); 
 }

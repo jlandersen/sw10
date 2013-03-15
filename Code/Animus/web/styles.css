@@ -1,0 +1,30 @@
+p {
+	margin: 0px;
+	padding: 0px;
+	font-weight: normal;
+  	line-height: 1;
+  	color: #999999;
+}
+
+#content {
+	position: relative;
+	overflow: scroll;
+}
+
+#sidemenu {
+	position: absolute; 
+	float: left;
+	left: 0px;
+	width: 0%;
+	overflow: hidden;
+	white-space: nowrap;
+}
+
+pre {
+	display:none;
+}
+
+#summary,
+#callgraph {
+	display:none;
+}

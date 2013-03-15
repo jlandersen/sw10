@@ -53,14 +53,14 @@ public class AnalysisEnvironmentBuilder {
 		
 		CallGraph callGraph = buildZeroXCFAAnalysis(analysisScope, classHierarchy);
 
-		return saveBuiltEnvironmentAsNewObject(analysisScope, classHierarchy, callGraph);
+		return saveBuiltEnvironmentInSingleton(analysisScope, classHierarchy, callGraph);
 	}
 
-	private AnalysisEnvironment saveBuiltEnvironmentAsNewObject(AnalysisScope scope, ClassHierarchy classHierarchy, CallGraph callGraph) {
-		AnalysisEnvironment environment = new AnalysisEnvironment();
-		environment.analysisScope = scope;
-		environment.classHierarchy = classHierarchy;
-		environment.callGraph = callGraph;
+	private AnalysisEnvironment saveBuiltEnvironmentInSingleton(AnalysisScope scope, ClassHierarchy classHierarchy, CallGraph callGraph) {
+		AnalysisEnvironment environment = AnalysisEnvironment.getAnalysisEnvironment();
+		environment.setAnalysisScope(scope);
+		environment.setClassHierarchy(classHierarchy);
+		environment.setCallGraph(callGraph);
 		return environment;
 	}
 

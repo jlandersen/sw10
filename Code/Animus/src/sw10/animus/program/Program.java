@@ -25,14 +25,14 @@ public class Program {
 	public static void main(String[] args) throws IOException, IllegalArgumentException, CancelException, InstantiationException, IllegalAccessException, WalaException, SecurityException, InvocationTargetException, NoSuchMethodException {
 		AnalysisSpecification specification = parseCommandLineArguments(args);
 		AnalysisEnvironment environment = AnalysisEnvironmentBuilder.makeFromSpecification(specification);
-		Analyzer analyzer = Analyzer.makeAnalyzer(specification, environment);
+		Analyzer analyzer = Analyzer.makeAnalyzer();
 		analyzer.start((Class<? extends ICostComputer<ICostResult>>)CostComputerMemory.class);
 	}
 	
 	private static AnalysisSpecification parseCommandLineArguments(String[] args) {
 		Properties properties = CommandLine.parse(args);
 		
-		AnalysisSpecification specification = new AnalysisSpecification();		
+		AnalysisSpecification specification = AnalysisSpecification.getAnalysisSpecification();		
 		
 		/* Required arguments */
 		String jvmModel = properties.getProperty(Config.COMMANDLINE_JVM_MODEL);

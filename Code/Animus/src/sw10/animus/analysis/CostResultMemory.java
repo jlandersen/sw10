@@ -36,6 +36,15 @@ public class CostResultMemory implements ICostResult {
 		
 		return clone;
 	}
+	
+	@Override
+	public CostResultMemory cloneTemporaryResult() {
+		CostResultMemory clone = new CostResultMemory();
+		clone.allocationCost = allocationCost;
+		clone.typeNameByNodeId.putAll(typeNameByNodeId);
+		
+		return clone;
+	}
 
 	@Override
 	public ResultType getResultType() {

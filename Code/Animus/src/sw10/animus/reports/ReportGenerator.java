@@ -12,9 +12,12 @@ import java.util.LinkedList;
 import java.util.Map.Entry;
 import java.util.Properties;
 
+import javax.naming.spi.DirectoryManager;
+
 import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.VelocityEngine;
+import org.apache.velocity.context.Context;
 
 import sw10.animus.analysis.ICostResult;
 import sw10.animus.build.AnalysisEnvironment;
@@ -40,17 +43,58 @@ public class ReportGenerator {
 	private AnalysisEnvironment environment;
 	private AnalysisSpecification specification;
 	
-	public ReportGenerator(String outDir, AnalysisEnvironment env, AnalysisSpecification spec) throws IOException {
+	private final String RESOURCES = "resources";
+	private final String DT = "dt";
+	private final String PDF = "pdf";
+	private final String INDEX_HTML = "index.html";
+	
+	private String OUTPUT_DIR;
+	private String RESOURCES_DIR;
+	private String DT_DIR;
+	private String PDF_DIR;
+	
+	public ReportGenerator(AnalysisEnvironment env, AnalysisSpecification spec) throws IOException {
 		this.environment = env;
 		this.specification = spec;
+		
+		String outputDir = specification.getOutputDir();
+		this.OUTPUT_DIR = outputDir;
+		this.RESOURCES_DIR = outputDir + File.separatorChar + RESOURCES;
+		this.DT_DIR = outputDir + File.separatorChar + RESOURCES + File.separatorChar + DT;
+		this.PDF_DIR = outputDir + File.separatorChar + RESOURCES + File.separatorChar + PDF;
+		
+		System.out.println(OUTPUT_DIR);
+		System.out.println(RESOURCES_DIR);
+		System.out.println(DT_DIR);
+		System.out.println(PDF_DIR);
+		
+		createOutputDirectories();
+	}
+	
+	private void createOutputDirectories() {
+		File outputDir = new File(OUTPUT_DIR);
+		if(!outputDir.exists()) {
+			try {
+				outputDir.mkdir();
+				new File(RESOURCES_DIR).mkdir();
+				new File(DT_DIR).mkdir();
+				new File(PDF_DIR).mkdir();
+			} catch (SecurityException e) {
+				System.err.println("Could not create output directories");
+				e.printStackTrace();
+			}
+		}
 	}
 	
 	public void Generate(HashMap<Source, HashMap<Node, LinkedList<Node>>> results) throws IOException {
 		VelocityEngine ve = new VelocityEngine();
 		ve.init();
-
         Template t = ve.getTemplate("templates/index.vm");
         VelocityContext ctx = new VelocityContext();
+        
+        String webDir = new File(".").getCanonicalPath() + "/web/";
+        GenerateCSSIncludes(ctx, webDir);
+        GenerateJSIncludes(ctx, webDir);
         
         GenerateSummary(ctx);
         GenerateCallgraph(ctx);
@@ -58,18 +102,32 @@ public class ReportGenerator {
         
         StringWriter writer = new StringWriter();
         t.merge(ctx, writer);
-  
-        System.out.println(writer.toString());        
+       
         String filecontent = writer.toString();
 
-        File htmlfile = new File("/Users/Todberg/Desktop/velocity.html");
-        if(!htmlfile.exists()){
-        	htmlfile.createNewFile();
+        File htmlFile = new File(OUTPUT_DIR + File.separatorChar + INDEX_HTML);
+        if(!htmlFile.exists()){
+        	htmlFile.createNewFile();
         }
 
-        FileWriter fw = new FileWriter(htmlfile);
+        FileWriter fw = new FileWriter(htmlFile);
         fw.write(filecontent);
         fw.close();
+	}
+	
+	private void GenerateCSSIncludes(Context ctx, String webDir) {
+		ctx.put("bootstrapCSS", webDir + "bootstrap/css/bootstrap.css");
+		ctx.put("fancyboxCSS", webDir + "fancyapps-fancyBox-0ffc358/source/jquery.fancybox.css");
+		ctx.put("syntaxCSS", webDir + "syntaxhighlighter_3.0.83/styles/shCoreDefault.css");
+		ctx.put("stylesCSS", webDir + "styles.css");
+	}
+    
+	private void GenerateJSIncludes(Context ctx, String webDir) {
+		ctx.put("syntaxcoreJS", webDir + "syntaxhighlighter_3.0.83/scripts/shCore.js");
+		ctx.put("syntaxbrushJS", webDir + "syntaxhighlighter_3.0.83/scripts/shBrushJava.js");
+		ctx.put("fancyboxJS", webDir + "fancyapps-fancyBox-0ffc358/source/jquery.fancybox.pack.js");
+		ctx.put("bootstrapJS", webDir + "bootstrap/js/bootstrap.js");
+		ctx.put("scriptsJS", webDir + "scripts.js");
 	}
 	
 	private void GenerateSummary(VelocityContext ctx) {
@@ -121,7 +179,7 @@ public class ReportGenerator {
 				sidemenu.append("<li><i class=\"icon-file icon-black\"></i>Package: " + " N/A " + "</li>\n");
 				String className = method.getDeclaringClass().getName().toString();
 				sidemenu.append("<li><i class=\"icon-file icon-black\"></i>Class:   " + className + "</li>\n");	
-				String href = specification.getOutputDir() + File.separatorChar + guid + ".pdf";
+				String href = PDF_DIR + File.separatorChar + guid + ".pdf";
 				sidemenu.append("<li><a data-fancybox-type=\"iframe\" class=\"cfgViewer\" href=\"" + href + "\"><i class=\"icon-refresh icon-black\"></i>Control-Flow Graph</a></li>\n");
 				sidemenu.append("<li><a href=\"#\"><i class=\"icon-align-justify icon-black\"></i>Callstack</a></li>\n");
 				sidemenu.append("</ul>\n");
@@ -158,10 +216,9 @@ public class ReportGenerator {
 	private void GenerateCFG(SSACFG cfg, String guid) throws WalaException{
 		Properties wp = WalaProperties.loadProperties();
 	    wp.putAll(WalaExamplesProperties.loadProperties());
-	    String outputDir = specification.getOutputDir() + File.separatorChar;
-		
-	    String psFile = outputDir + guid + ".pdf";		
-	    String dotFile = outputDir + guid + ".dt";
+
+	    String psFile = PDF_DIR + File.separatorChar + guid + ".pdf";	
+	    String dotFile = DT_DIR + File.separatorChar + guid + ".dt";
 	    String dotExe = wp.getProperty(WalaExamplesProperties.DOT_EXE);
 	    
 	    final HashMap<BasicBlock, String> labelMap = HashMapFactory.make();

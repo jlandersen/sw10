@@ -24,5 +24,17 @@ public class FileScanner {
 		}
 		return mapping;
 	}
+	
+	public static String getFullPath(String fileName) {
+		fileName = fileName.substring(0, fileName.indexOf('.'));
+		String fullPath = "";
+		for(String path : mapping.keySet()) {
+			if(path.contains(fileName)) {
+				fullPath = path + ".java";
+				break;
+			}
+		}
+		return fullPath;
+	}
 }
 

@@ -4,19 +4,17 @@
     <title>Auto-Generated HTML File</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- Styles -->
-    <link href="/Users/Todberg/Documents/SW10/Code/Web/bootstrap/css/bootstrap.css" rel="stylesheet" media="screen">
-    <link rel="stylesheet" href="/Users/Todberg/Documents/SW10/Code/Web/fancyapps-fancyBox-0ffc358/source/jquery.fancybox.css" />
-    <link rel="stylesheet" href="/Users/Todberg/Documents/SW10/Code/Web/syntaxhighlighter_3.0.83/styles/shCoreDefault.css" />
-    <link rel="stylesheet" href="/Users/Todberg/Documents/SW10/Code/Web/jquery-ui-1.10.1.custom/css/south-street/jquery-ui-1.10.1.custom.css" />
-    <link rel="stylesheet" href="/Users/Todberg/Documents/SW10/Code/Web/styles.css" />
+    <link rel="stylesheet" href="$bootstrapCSS" media="screen">
+    <link rel="stylesheet" href="$fancyboxCSS" />
+    <link rel="stylesheet" href="$syntaxCSS" />
+    <link rel="stylesheet" href="$stylesCSS" />
     <!-- Scripts -->
-    <script src="/Users/Todberg/Documents/SW10/Code/Web/syntaxhighlighter_3.0.83/scripts/shCore.js"></script>
-    <script src="/Users/Todberg/Documents/SW10/Code/Web/syntaxhighlighter_3.0.83/scripts/shBrushJava.js"></script>
+    <script src="$syntaxcoreJS"></script>
+    <script src="$syntaxbrushJS"></script>
     <script src="http://code.jquery.com/jquery.js"></script>
-    <script src="/Users/Todberg/Documents/SW10/Code/Web/jquery-ui-1.10.1.custom/js/jquery-ui-1.10.1.custom.min.js"></script>
-    <script src="/Users/Todberg/Documents/SW10/Code/Web/fancyapps-fancyBox-0ffc358/source/jquery.fancybox.pack.js"></script>
-    <script src="/Users/Todberg/Documents/SW10/Code/Web/bootstrap/js/bootstrap.min.js"></script>
-    <script src="/Users/Todberg/Documents/SW10/Code/Web/scripts.js"></script>
+    <script src="$fancyboxJS"></script>
+    <script src="$bootstrapJS"></script>
+    <script src="$scriptsJS"></script>
   </head>
   <body>
     <div class="container">
