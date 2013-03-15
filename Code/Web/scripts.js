@@ -1,53 +1,105 @@
 $(function() {
-  var menuActive = $('#menuSummery');
+  
+  /* Active items */
+  var menuActive = $('#menuSummary');
+  var divActive = $('#summary'); 
+  var activeLiElement = $('#methods li').first(); // add or remove "active" class
+  
+  /* Menus */
+  var menuSummary = $('#menuSummary');
+  var menuCallgraph = $('#menuCallgraph');
+  var menuDetails = $('#menuDetails');
+
+  /* Content divs */
+  var divContent = $('#content');
+  var divSidemenu = $('#sidemenu');
+  var divSummary = $('#summary');
+  var divCallgraph = $('#callgraph');
+  var divDetails = $('#details');
+
+  /* Heights */
+  var heightSummary = divSummary.height();
+  var heightCallgraph = divCallgraph.height();
+  var heightDetails = '800px';
 
   /* Navigation bar */
-  $('.nav').on('click', '#btnSummery', function() {
-    toggleMenuActive($('#menuSummery'));
-    var timestamp = new Date().getMilliseconds();
-    var script = document.createElement('script');
-    script.type = 'text/javascript';
-    script.src = '/Users/Todberg/Documents/output/summery.js?' + timestamp;
-    document.getElementById('content').appendChild( script );
+  $('.nav').on('click', '#btnSummary', function() {
+    toggleActive(menuSummary, divSummary, heightSummary);
+    $('#detailsPanel').slideUp();
   });
 
   $('.nav').on('click', '#btnCallgraph', function() {
-    toggleMenuActive($('#menuCallgraph'));
-    var timestamp = new Date().getMilliseconds();
-    var script = document.createElement('script');
-    script.type = 'text/javascript';
-    script.src = '/Users/Todberg/Documents/output/callgraph.js?' + timestamp;
-    document.getElementById('content').appendChild( script );
+    toggleActive(menuCallgraph, divCallgraph, heightCallgraph);
+    $('#detailsPanel').slideUp();
   });
 
   $('.nav').on('click', '#btnDetails', function() {
-    toggleMenuActive($('#menuDetails'));
-    var timestamp = new Date().getMilliseconds();
-    var script = document.createElement('script');
-    script.type = 'text/javascript';
-    script.src = '/Users/Todberg/Documents/output/details.js?' + timestamp;
-    document.getElementById('content').appendChild( script );  
+    if(menuActive == menuDetails)
+      return;
+    toggleActive(menuDetails, divDetails, heightDetails);
+    $('#detailsPanel').slideDown();
+    divContent.animate({'left': '20%'}, 150, function() {
+      divSidemenu.animate({'width': '27%'}, 150);
+      divSidemenu.css('padding', '10px');
+    });
+    $('#methods li a').first().trigger('click');
   });
-
-  toggleMenuActive = function(menu) {
+  
+  toggleActive = function(menu, div, height) {
+    /* Slide sidemenu back */
+    if(menuActive == menuDetails) {
+      divSidemenu.animate({'width': '0%'}, 200, function() {
+        divSidemenu.css('padding', '0px');
+        divContent.animate({'left': '0%'}, 150);
+      });
+    }
+    divActive.css('display', 'none'); // hide active div
     menuActive.removeClass('active');
+    
+    div.css('display', 'block');
     menu.addClass('active');
+
     menuActive = menu;
+    divActive = div;
+    divContent.animate({'height': height}, 250);
   };
 
-  /* CFG Viewer */
-  $(".pdf").fancybox({
-    helpers : {
-      title : {
-        type : 'over'
-      }
-    },
-    hideOnContentClick: 'false',
-    type : 'iframe'
+  /* CFG Viewer */  
+  $(".cfgViewer").fancybox({
+    fitToView : false,
+    width   : '95%',
+    height    : '95%',
+    autoSize  : false,
+    closeClick  : false,
+    openEffect  : 'fade',
+    closeEffect : 'elastic'
   });
 
   /* Style buttons */
   $("input[type=submit], a, button").button();
 
-  $('#btnSummery').trigger('click');
+  $('#methods').on('click', "li a[id|='method']", function(event) {
+    var method = event.currentTarget; // DOM element (anchor)
+    var methodId = event.currentTarget.id // "method-x"
+    var methodJquery = $('#' + methodId); // Jquery object
+    var methodLiElement = methodJquery.parent();
+
+    /* Switch between actives */
+    activeLiElement.removeClass('active');
+    methodLiElement.addClass('active');
+    activeLiElement = methodLiElement;
+
+    var num = methodId.substring(7) // xxxxxx-xxxxx (GUID)
+
+    var codeId = 'code-' + num;
+    $('#' + codeId).css('display', 'block');
+    SyntaxHighlighter.highlight(); 
+    $("div[id|='code']").each(function(index, element) {
+      if(element.id != codeId) {
+        $('#' + element.id).css('display', 'none');
+      }
+    });
+  });
+
+  $('#btnSummary').trigger('click');
 });

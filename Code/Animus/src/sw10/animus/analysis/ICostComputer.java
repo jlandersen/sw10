@@ -14,7 +14,6 @@ import com.ibm.wala.util.collections.Pair;
 public interface ICostComputer<T extends ICostResult> {
 	T getCostForInstructionInBlock(SSAInstruction instruction, ISSABasicBlock block, CGNode node);
 	void addCost(T fromResult, T toResult);
-	void addCostAndContext(T fromResult, T toResult);
-	T getFinalResultsFromContextResultsAndLPSolutions(T resultsContext, Result result, Problem problem, Map<String, Pair<Integer, Integer>> edgeLabelToNodesIDs, Map<Integer, ICostResult> calleeResultsAtGraphNodeIdByResult);
+	T getFinalResultsFromContextResultsAndLPSolutions(T resultsContext, Result result, Problem problem, Map<String, Pair<Integer, Integer>> edgeLabelToNodesIDs);
 	public boolean isInstructionInteresting(SSAInstruction instruction); 
 }

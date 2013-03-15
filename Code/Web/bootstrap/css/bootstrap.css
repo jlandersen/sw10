@@ -289,7 +289,8 @@ a:focus {
 .navbar-static-top .container,
 .navbar-fixed-top .container,
 .navbar-fixed-bottom .container {
-  width: 940px;
+  /*width: 940px;*/
+  width: 68%;
 }
 
 .span12 {
@@ -6111,6 +6112,19 @@ a.badge:focus {
 .hero-unit {
   padding: 60px;
   margin-bottom: 30px;
+  font-size: 18px;
+  font-weight: 200;
+  line-height: 30px;
+  color: inherit;
+  background-color: #eeeeee;
+  -webkit-border-radius: 6px;
+     -moz-border-radius: 6px;
+          border-radius: 6px;
+  height: 0px;
+}
+
+.hero-unit2 {
+  padding: 0px;
   font-size: 18px;
   font-weight: 200;
   line-height: 30px;

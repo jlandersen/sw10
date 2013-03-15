@@ -36,38 +36,23 @@
         <div class="navbar-inner">
           <div class="container">
             <ul class="nav">
-              <li id="menuSummery" class="active"><a href="#" id="btnSummery">Summery</a></li>
+              <li id="menuSummary" class="active"><a href="#" id="btnSummary">Summary</a></li>
               <li id="menuCallgraph"><a href="#" id="btnCallgraph">Callgraph</a></li>
               <li id="menuDetails"><a href="#" id="btnDetails">Details</a></li>
             </ul>
           </div>
         </div>
-        <!-- Details Slider -->
       </div>
-		<div id="detailsPanel">
-
-  			<div style="float:left; width:48%;">
-            <span class="label label-success">Classes</span>
-  	        <ul class="nav nav-pills nav-stacked">
-  		  			<li class="active"><a href="#">item 1</a></li>
-  	  				<li><a href="#">item 2</a></li>
-  		  		</ul>
-  			</div>
-  			<div style="float:left; width:50%; margin-left:2%;">
-          <span class="label label-success">Methods</span>
-  				<ul class="nav nav-pills nav-stacked">
-              <li class="active"><a href="#">item 1</a></li>
-              <li><a href="#">item 2</a></li>
-              <li><a href="#">item 2</a></li>
-              <li><a href="#">item 2</a></li>
-              <li><a href="#">item 2</a></li>
-          </ul>
-  			</div>
-	  	</div>
-	  	<div style="clear:both;"></div>
+      <!-- Sidemenu -->
+      <div class="hero-unit2" id="sidemenu"> 
+        Analyzed Methods
+        <ul class="nav nav-list" id="methods">
+          $sidemenu
+        </ul>
+      </div>
       <!-- Content -->
       <div class="hero-unit" id="content">
-        <div id="summery">
+        <div id="summary">
         	<table class="table table-bordered table-striped">
         		<tbody>
         			<tr>
@@ -88,7 +73,6 @@
         <div id="callgraph">$callgraph</div>
         <div id="details">
         	$code
-        	<script>SyntaxHighlighter.highlight();</script>
         </div>
       </div>
       <!-- Footer -->
