@@ -6,6 +6,7 @@ import java.util.NoSuchElementException;
 
 import net.sf.javailp.Problem;
 import net.sf.javailp.Result;
+import sw10.animus.analysis.ICostResult.ResultType;
 import sw10.animus.build.JVMModel;
 
 import com.ibm.wala.ipa.callgraph.CGNode;
@@ -32,6 +33,7 @@ public class CostComputerMemory implements ICostComputer<CostResultMemory> {
 		try {
 			result.allocationCost = model.getSizeForQualifiedType(typeName);
 			result.typeNameByNodeId.put(block.getGraphNodeId(), typeName);
+			result.resultType = ResultType.TEMPORARY_BLOCK_RESULT;
 		} catch(NoSuchElementException e) {
 			System.err.println("model.json does not contain type: " + typeNameStr);
 		}
@@ -40,8 +42,9 @@ public class CostComputerMemory implements ICostComputer<CostResultMemory> {
 	}
 
 	@Override
-	public CostResultMemory getFinalResultsFromContextResultsAndLPSolutions(CostResultMemory resultsContext, Result lpResults, Problem problem, Map<String, Pair<Integer, Integer>> edgeLabelToNodesIDs) {
+	public CostResultMemory getFinalResultsFromContextResultsAndLPSolutions(CostResultMemory resultsContext, Result lpResults, Problem problem, Map<String, Pair<Integer, Integer>> edgeLabelToNodesIDs, Map<Integer, ICostResult> calleeResultsAtGraphNodeIdByResult) {
 		CostResultMemory results = resultsContext.clone();
+		results.typeNameByNodeId.putAll(resultsContext.typeNameByNodeId);
 		results.allocationCost = lpResults.getObjective().intValue();
 		Collection<Object> allVariables = problem.getVariables();
 		for(Object var : allVariables) {
@@ -52,7 +55,7 @@ public class CostComputerMemory implements ICostComputer<CostResultMemory> {
 					if (edges == null) /* happens for exit block */
 						continue;
 					int blockDstID = edges.snd;
-					if (resultsContext.typeNameByNodeId.containsKey(blockDstID)) { /* is this src block an allocation node? */
+					if (resultsContext.typeNameByNodeId.containsKey(blockDstID)) {
 						TypeName typeName = resultsContext.typeNameByNodeId.get(blockDstID);
 						if (results.countByTypename.containsKey(typeName)) {
 							int count = results.countByTypename.get(typeName);
@@ -64,10 +67,25 @@ public class CostComputerMemory implements ICostComputer<CostResultMemory> {
 							results.countByTypename.put(typeName, lpResults.getPrimalValue(var).intValue());
 						}
 					}
+					
+					if (calleeResultsAtGraphNodeIdByResult.containsKey(blockDstID)) {
+						CostResultMemory memRes = (CostResultMemory)calleeResultsAtGraphNodeIdByResult.get(blockDstID);
+						for(Entry<TypeName, Integer> typeAllocatedInCallee : memRes.countByTypename.entrySet()) {
+							if (results.countByTypename.containsKey(typeAllocatedInCallee.getKey())) {
+								int count = results.countByTypename.get(typeAllocatedInCallee.getValue());
+								count += lpResults.getPrimalValue(var).intValue();
+								results.countByTypename.put(typeAllocatedInCallee.getKey(), count);
+							}
+							else
+							{
+								results.countByTypename.put(typeAllocatedInCallee.getKey(), lpResults.getPrimalValue(var).intValue());
+							}							
+						}
+					}
 				}
 			}
 		}
-
+		results.resultType = ResultType.COMPLETE_NODE_RESULT;
 		return results;
 	}        
 
@@ -79,19 +97,12 @@ public class CostComputerMemory implements ICostComputer<CostResultMemory> {
 	@Override
 	public void addCost(CostResultMemory fromResult, CostResultMemory toResult) {
 		toResult.allocationCost += fromResult.getCostScalar();
-		toResult.typeNameByNodeId.putAll(fromResult.typeNameByNodeId);
-		/*
-		for (Entry<TypeName, Integer> typenameCount : fromResult.countByTypename.entrySet()) {
-			if (toResult.countByTypename.containsKey(typenameCount.getKey())) {
-				int newCount = typenameCount.getValue() + toResult.countByTypename.get(typenameCount.getKey());
-				toResult.countByTypename.put(typenameCount.getKey(), newCount);
-			}
-			else
-			{
-				toResult.countByTypename.put(typenameCount.getKey(), typenameCount.getValue());
-			}
-		}
-		*/
 	}
-
+	
+	@Override
+	public void addCostAndContext(CostResultMemory fromResult,
+			CostResultMemory toResult) {
+		toResult.allocationCost += fromResult.getCostScalar();
+		toResult.typeNameByNodeId.putAll(fromResult.typeNameByNodeId);
+	}
 }

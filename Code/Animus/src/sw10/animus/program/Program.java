@@ -88,7 +88,7 @@ public class Program {
 				}
 				
 				specification.setShouldGenerateAnalysisReports(report);
-			}	
+			}
 			
 			if(entryPoints != null)
 				specification.setEntryPoints(entryPoints);

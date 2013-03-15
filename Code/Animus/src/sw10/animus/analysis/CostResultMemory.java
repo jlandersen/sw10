@@ -3,15 +3,18 @@ package sw10.animus.analysis;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.ibm.wala.ipa.callgraph.CGNode;
 import com.ibm.wala.types.TypeName;
 
 public class CostResultMemory implements ICostResult {
 	public long allocationCost;
 	public Map<TypeName, Integer> countByTypename;
 	public Map<Integer, TypeName> typeNameByNodeId;
-	
+	public ICostResult.ResultType resultType;
+
 	public CostResultMemory() {
 		allocationCost = 0;
+		resultType = ResultType.TEMPORARY_BLOCK_RESULT;
 		countByTypename = new HashMap<TypeName, Integer>();
 		typeNameByNodeId = new HashMap<Integer, TypeName>();
 	}
@@ -30,9 +33,18 @@ public class CostResultMemory implements ICostResult {
 	public CostResultMemory clone() {
 		CostResultMemory clone = new CostResultMemory();
 		clone.allocationCost = allocationCost;
-		clone.countByTypename.putAll(this.countByTypename);
-		clone.typeNameByNodeId.putAll(this.typeNameByNodeId);
 		
 		return clone;
 	}
+
+	@Override
+	public ResultType getResultType() {
+		return this.resultType;
+	}
+	
+	@Override
+	public boolean isFinalNodeResult() {
+		return this.resultType.equals(ResultType.COMPLETE_NODE_RESULT);
+	}
+	
 }

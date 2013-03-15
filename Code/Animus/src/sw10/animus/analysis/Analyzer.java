@@ -4,8 +4,8 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -25,10 +25,6 @@ import sw10.animus.analysis.loopanalysis.CFGLoopAnalyzer;
 import sw10.animus.build.AnalysisEnvironment;
 import sw10.animus.build.JVMModel;
 import sw10.animus.program.AnalysisSpecification;
-import sw10.animus.reports.Compactor;
-import sw10.animus.reports.Compactor.Node;
-import sw10.animus.reports.Compactor.Source;
-import sw10.animus.reports.ReportGenerator;
 import sw10.animus.util.Util;
 import sw10.animus.util.annotationextractor.extractor.AnnotationExtractor;
 import sw10.animus.util.annotationextractor.parser.Annotation;
@@ -79,11 +75,6 @@ public class Analyzer {
 		this.costComputerType = costComputerType;
 		this.costComputer = costComputerType.getDeclaredConstructor(JVMModel.class).newInstance(specification.getJvmModel());
 
-		/* Reports */
-		HashMap<Node, LinkedList<Node>> entries = new HashMap<Node, LinkedList<Node>>();
-		Compactor compactor = new Compactor();
-		Node node;
-		
 		if (specification.getEntryPoints() == null) {
 			CGNode entryNode = environment.callGraph.getEntrypointNodes().iterator().next();
 			System.out.println(entryNode.getMethod().toString());
@@ -108,40 +99,9 @@ public class Analyzer {
 					System.out.println(i.getKey().toString() + " - " + i.getValue());
 				}
 				
-				System.out.println("Worst case allocation:" + results.getCostScalar());
-				
-				/* Reports */
-				node = compactor.new Node();
-				node.cgNode = entryNode;
-				node.costResult = results;
-				entries.put(node, null);
+				System.out.println("Worst case allocation for " + entryNode.getMethod().toString() + ":" + results.getCostScalar());
 			}
 		}
-		
-		/* Testing reports */
-		ReportGenerator gen = new ReportGenerator("/Users/Todberg/Documents/output", environment, specification);
-		ArrayList<Integer> lineNumbers = new ArrayList<Integer>();
-		lineNumbers.add(3);
-		lineNumbers.add(4);
-		lineNumbers.add(5);
-		ArrayList<Integer> methodSignatureLineNumbers = new ArrayList<Integer>();
-		methodSignatureLineNumbers.add(3);
-		
-		Source source = compactor.new Source("/Users/Todberg/Documents/SW10/Code/Wala Exploration/src/SimpleApplication.java", lineNumbers, methodSignatureLineNumbers);
-		
-		ArrayList<Integer> lineNumbers2 = new ArrayList<Integer>();
-		lineNumbers2.add(30);
-		lineNumbers2.add(31);
-		lineNumbers2.add(32);
-		ArrayList<Integer> methodSignatureLineNumbers2 = new ArrayList<Integer>();
-		methodSignatureLineNumbers2.add(30);
-		Source source2 = compactor.new Source("/Users/Todberg/Documents/SW10/Code/Wala Exploration/src/SimpleApplication.java", lineNumbers2, methodSignatureLineNumbers2);
-		
-		HashMap<Source, HashMap<Node, LinkedList<Node>>> results = new HashMap<Compactor.Source, HashMap<Node,LinkedList<Node>>>();
-		results.put(source2, entries);
-		results.put(source, entries);
-		
-		gen.Generate(results);
 	}
 
 	public ICostResult analyzeNode(CGNode cgNode) {
@@ -163,6 +123,14 @@ public class Analyzer {
 
 		Map<Integer, Annotation> annotationByLineNumber = getAnnotations(method);
 		Map<Integer, ArrayList<Integer>> loopBlocksByHeaderBlockId = getLoops(cfg, ir.getControlFlowGraph().entry());
+		
+		if (method.toString().contains("hey")) {
+			try {
+				Util.CreatePDFCFG(cfg, environment.classHierarchy, cgNode);
+			} catch (WalaException e) {
+				e.printStackTrace();
+			}
+		}
 
 		/* LPSolver */
 		SolverFactory factory = new SolverFactoryLpSolve();
@@ -174,7 +142,9 @@ public class Analyzer {
 		String variable;
 
 		BFSIterator<ISSABasicBlock> iteratorBFSOrdering = new BFSIterator<ISSABasicBlock>(cfg);
-
+		Map<Integer, ICostResult> calleeNodeResultsByBlockGraphId = new HashMap<Integer, ICostResult>();
+		Set<ICostResult> calleeNodeResultsAlreadyFound = new HashSet<ICostResult>();
+		
 		ICostResult intermediateResults = null;
 
 		while(iteratorBFSOrdering.hasNext()) {
@@ -232,11 +202,24 @@ public class Analyzer {
 			{
 				ICostResult costForBlock = analyzeBasicBlock(currentBlock, cgNode);
 				if (costForBlock != null) {
+					
+					if (costForBlock.isFinalNodeResult() && !calleeNodeResultsAlreadyFound.contains(costForBlock)) {
+						calleeNodeResultsByBlockGraphId.put(currentBlock.getGraphNodeId(), costForBlock);
+						calleeNodeResultsAlreadyFound.add(costForBlock);
+					}
+					
 					if (intermediateResults != null) {
-						costComputer.addCost(costForBlock, intermediateResults);
+						if (costForBlock.isFinalNodeResult()) {
+							costComputer.addCost(costForBlock, intermediateResults);	
+						}
+						else
+						{
+							costComputer.addCostAndContext(costForBlock, intermediateResults);
+						}
+						
 					}
 					else {
-						intermediateResults = costForBlock.clone();	
+						intermediateResults = costForBlock.clone();
 					}
 				}
 
@@ -312,7 +295,7 @@ public class Analyzer {
 			intermediateResults = new CostResultMemory();
 		}
 		
-		ICostResult finalResults = costComputer.getFinalResultsFromContextResultsAndLPSolutions(intermediateResults, result, problem, edgeLabelToNodesIDs);
+		ICostResult finalResults = costComputer.getFinalResultsFromContextResultsAndLPSolutions(intermediateResults, result, problem, edgeLabelToNodesIDs, calleeNodeResultsByBlockGraphId);
 		results.saveResultForNode(cgNode, finalResults);
 	
 		return finalResults;
@@ -345,11 +328,11 @@ public class Analyzer {
 			if(inst.isDispatch()) {	// invokevirtual
 				CallSiteReference callSiteRef = inst.getCallSite();
 				Set<CGNode> possibleTargets = environment.callGraph.getPossibleTargets(node, callSiteRef);
-				ICostResult maximumResult = new CostResultMemory();
+				ICostResult maximumResult = null;
 				ICostResult tempResult = null;
 				for(CGNode target : Iterator2Iterable.make(possibleTargets.iterator())) {
 					tempResult = analyzeNode(target);
-					if(tempResult.getCostScalar() > maximumResult.getCostScalar())
+					if(maximumResult == null || tempResult.getCostScalar() > maximumResult.getCostScalar())
 						maximumResult = tempResult;
 				}
 				return maximumResult;
