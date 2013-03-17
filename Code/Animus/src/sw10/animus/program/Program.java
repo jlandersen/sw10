@@ -91,7 +91,7 @@ public class Program {
 			}
 			
 			if(entryPoints != null)
-				specification.setEntryPoints(entryPoints);
+				specification.setEntryPointSignatures(entryPoints);
 		}	
 		
 		return specification;

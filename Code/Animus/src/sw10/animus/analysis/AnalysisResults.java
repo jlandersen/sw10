@@ -3,23 +3,23 @@ package sw10.animus.analysis;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
-import sw10.animus.reports.Compactor;
-import sw10.animus.reports.Compactor.Node;
-import sw10.animus.reports.Compactor.Source;
+import sw10.animus.program.AnalysisSpecification;
+import sw10.animus.reports.ReportEntry;
 
 import com.ibm.wala.ipa.callgraph.CGNode;
 
 public class AnalysisResults {	
 	private static AnalysisResults singletonObject;
 	private Map<CGNode, ICostResult> nodesProcessed;
-	private Map<String, ArrayList<Integer>> lineNumbersByJavaSourceFile;
+	private ArrayList<ReportEntry> reportEntries;
+	private AnalysisSpecification analysisSpecification;
 
-	private Map<Source, Node> results;
-	
 	private AnalysisResults() {
 		this.nodesProcessed = new HashMap<CGNode, ICostResult>();
-		this.lineNumbersByJavaSourceFile = new HashMap<String, ArrayList<Integer>>();
+		this.reportEntries = new ArrayList<ReportEntry>();
+		this.analysisSpecification = AnalysisSpecification.getAnalysisSpecification(); 
 	}
 	
 	public static synchronized AnalysisResults getAnalysisResults() {
@@ -41,19 +41,31 @@ public class AnalysisResults {
 		return nodesProcessed.containsKey(node);
 	}
 	
-	public void addLineNumberToFile(String filePath, int line) {
-		if(lineNumbersByJavaSourceFile.containsKey(filePath)) {
-			ArrayList<Integer> lineNumbers = lineNumbersByJavaSourceFile.get(filePath);
-			if(!lineNumbers.contains(line))
-				lineNumbers.add(line);
-		} else {
-			ArrayList<Integer> lineNumbers = new ArrayList<Integer>();
-			lineNumbers.add(line);
-			lineNumbersByJavaSourceFile.put(filePath, lineNumbers);
-		}
+	public ArrayList<ReportEntry> getReportEntries() {
+		return reportEntries;
 	}
 	
-	public  Map<String, ArrayList<Integer>> getLineNumbersByJavaSourceFile() {
-		return lineNumbersByJavaSourceFile;
+	public void addReportData(final String sourceFilePath, final Set<Integer> lines, final CGNode cgNode, final ICostResult cost) {
+		/* Form package */
+		int startIndex = analysisSpecification.getSourceFilesRootDir().length();
+		int stopIndex = sourceFilePath.lastIndexOf('/');
+		final String packages = sourceFilePath.substring(startIndex, stopIndex).replace('/', '.');
+		
+		for(ReportEntry entry : reportEntries) {
+			if(entry.getSource().equals(sourceFilePath)) {
+				entry.addEntry(cgNode, cost);
+				entry.setPackages(packages);
+				entry.setLineNumbers(lines, cgNode);
+				return;
+			}
+		}	
+
+		/* Create new report entry */
+		reportEntries.add(new ReportEntry() {{
+			setSource(sourceFilePath);
+			addEntry(cgNode, cost);
+			setPackages(packages);
+			setLineNumbers(lines, cgNode);
+		}});
 	}
 }

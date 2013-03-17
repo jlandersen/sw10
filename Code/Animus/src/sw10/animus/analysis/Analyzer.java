@@ -1,6 +1,5 @@
 package sw10.animus.analysis;
 
-import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
@@ -11,7 +10,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.NoSuchElementException;
 import java.util.Set;
 
 import net.sf.javailp.Constraint;
@@ -27,9 +25,6 @@ import sw10.animus.analysis.loopanalysis.CFGLoopAnalyzer;
 import sw10.animus.build.AnalysisEnvironment;
 import sw10.animus.build.JVMModel;
 import sw10.animus.program.AnalysisSpecification;
-import sw10.animus.reports.Compactor;
-import sw10.animus.reports.Compactor.Node;
-import sw10.animus.reports.Compactor.Source;
 import sw10.animus.reports.ReportGenerator;
 import sw10.animus.util.Util;
 import sw10.animus.util.annotationextractor.extractor.AnnotationExtractor;
@@ -55,7 +50,6 @@ import com.ibm.wala.util.graph.labeled.SlowSparseNumberedLabeledGraph;
 import com.ibm.wala.util.graph.traverse.BFSIterator;
 import com.ibm.wala.util.intset.IntIterator;
 import com.ibm.wala.util.intset.IntSet;
-import com.ibm.wala.util.strings.StringStuff;
 
 public class Analyzer {
 
@@ -64,7 +58,7 @@ public class Analyzer {
 	private ICostComputer<ICostResult> costComputer;
 	private AnalysisEnvironment environment;
 	private AnalysisResults results;
-
+	
 	private Analyzer() {
 		this.environment = AnalysisEnvironment.getAnalysisEnvironment();
 		this.specification = AnalysisSpecification.getAnalysisSpecification();
@@ -79,24 +73,33 @@ public class Analyzer {
 	public void start(Class<? extends ICostComputer<ICostResult>> costComputerType) throws InstantiationException, IllegalAccessException, IllegalArgumentException, WalaException, IOException, SecurityException, InvocationTargetException, NoSuchMethodException {
 		this.costComputer = costComputerType.getDeclaredConstructor(JVMModel.class).newInstance(specification.getJvmModel());
 
-		/* Reports */
-		HashMap<Node, LinkedList<Node>> entries = new HashMap<Node, LinkedList<Node>>();
-		Compactor compactor = new Compactor();
-		Node node;
+		LinkedList<CGNode> entryCGNodes = specification.getEntryPointCGNodes();	
 		
-		if (specification.getEntryPoints() == null) {
+		for(CGNode entryNode : entryCGNodes) {
+			ICostResult results = analyzeNode(entryNode);
+			CostResultMemory memRes = (CostResultMemory)results;				
+			System.out.println("Worst case allocation for " + entryNode.getMethod().toString() + ":" + results.getCostScalar());
+			for(Entry<TypeName, Integer> i : memRes.countByTypename.entrySet()) {
+				System.out.println("\t" + i.getKey().toString() + " - " + i.getValue());
+			}
+		}
+		
+		/*
+		if (entryPoints == null) {
 			CGNode entryNode = environment.getCallGraph().getEntrypointNodes().iterator().next();
+			this.entryPoints.add(entryNode);
 			System.out.println(entryNode.getMethod().toString());
 			ICostResult results = analyzeNode(entryNode);
 			System.out.println("Worst case allocation:" + results.getCostScalar());
 		}
 		else
 		{
-			for(String entryPoint : specification.getEntryPoints()) {
+			for(String entryPoint : entryPoints) {
 				MethodReference mr = StringStuff.makeMethodReference(entryPoint);
 				CGNode entryNode = null;
 				try {
 					entryNode = environment.getCallGraph().getNodes(mr).iterator().next();
+					this.entryPoints.add(entryNode);
 				}
 				catch (NoSuchElementException e) {
 					System.err.println(entryPoint + " is not part of the call graph!");
@@ -108,40 +111,12 @@ public class Analyzer {
 				for(Entry<TypeName, Integer> i : memRes.countByTypename.entrySet()) {
 					System.out.println("\t" + i.getKey().toString() + " - " + i.getValue());
 				}
-				
-				/* Reports */
-				node = compactor.new Node();
-				node.cgNode = entryNode;
-				node.costResult = results;
-				entries.put(node, null);
 			}
 		}
-
-		/* Testing reports */
-		ReportGenerator gen = new ReportGenerator(environment, specification);
-		ArrayList<Integer> lineNumbers = new ArrayList<Integer>();
-		lineNumbers.add(3);
-		lineNumbers.add(4);
-		lineNumbers.add(5);
-		ArrayList<Integer> methodSignatureLineNumbers = new ArrayList<Integer>();
-		methodSignatureLineNumbers.add(3);
+		*/
 		
-		String path = specification.getSourceFilesRootDir() + File.separatorChar;
-		Source source = compactor.new Source(path + "SimpleApplication.java", lineNumbers, methodSignatureLineNumbers);
-		
-		ArrayList<Integer> lineNumbers2 = new ArrayList<Integer>();
-		lineNumbers2.add(30);
-		lineNumbers2.add(31);
-		lineNumbers2.add(32);
-		ArrayList<Integer> methodSignatureLineNumbers2 = new ArrayList<Integer>();
-		methodSignatureLineNumbers2.add(30);
-		Source source2 = compactor.new Source(path + "SimpleApplication.java", lineNumbers2, methodSignatureLineNumbers2);
-		
-		HashMap<Source, HashMap<Node, LinkedList<Node>>> results = new HashMap<Compactor.Source, HashMap<Node,LinkedList<Node>>>();
-		results.put(source2, entries);
-		results.put(source, entries);
-		
-		gen.Generate(results);
+		ReportGenerator gen = new ReportGenerator();
+		gen.Generate(AnalysisResults.getAnalysisResults().getReportEntries());
 	}
 
 	public ICostResult analyzeNode(CGNode cgNode) {
@@ -330,7 +305,8 @@ public class Analyzer {
 		Result result = solver.solve(problem);
 				
 		ICostResult finalResults;
-		finalResults = costComputer.getFinalResultsFromContextResultsAndLPSolutions(intermediateResults, result, problem, edgeLabelToNodesIDs, calleeNodeResultsByBlockGraphId, cgNode);
+		finalResults = costComputer.getFinalResultsFromContextResultsAndLPSolutions(intermediateResults, result, 
+				problem, edgeLabelToNodesIDs, calleeNodeResultsByBlockGraphId, cgNode);
 		results.saveResultForNode(cgNode, finalResults);
 	
 		return finalResults;

@@ -8,11 +8,9 @@ import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.Map.Entry;
 import java.util.Properties;
-
-import javax.naming.spi.DirectoryManager;
+import java.util.Set;
 
 import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
@@ -20,10 +18,7 @@ import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.context.Context;
 
 import sw10.animus.analysis.ICostResult;
-import sw10.animus.build.AnalysisEnvironment;
 import sw10.animus.program.AnalysisSpecification;
-import sw10.animus.reports.Compactor.Node;
-import sw10.animus.reports.Compactor.Source;
 
 import com.ibm.wala.classLoader.IMethod;
 import com.ibm.wala.examples.properties.WalaExamplesProperties;
@@ -40,7 +35,6 @@ import com.ibm.wala.viz.NodeDecorator;
 
 public class ReportGenerator {
 
-	private AnalysisEnvironment environment;
 	private AnalysisSpecification specification;
 	
 	private final String RESOURCES = "resources";
@@ -53,9 +47,8 @@ public class ReportGenerator {
 	private String DT_DIR;
 	private String PDF_DIR;
 	
-	public ReportGenerator(AnalysisEnvironment env, AnalysisSpecification spec) throws IOException {
-		this.environment = env;
-		this.specification = spec;
+	public ReportGenerator() throws IOException {
+		this.specification = AnalysisSpecification.getAnalysisSpecification();
 		
 		String outputDir = specification.getOutputDir();
 		this.OUTPUT_DIR = outputDir;
@@ -86,7 +79,7 @@ public class ReportGenerator {
 		}
 	}
 	
-	public void Generate(HashMap<Source, HashMap<Node, LinkedList<Node>>> results) throws IOException {
+	public void Generate(ArrayList<ReportEntry> reportEntries) throws IOException {
 		VelocityEngine ve = new VelocityEngine();
 		ve.init();
         Template t = ve.getTemplate("templates/index.vm");
@@ -98,7 +91,7 @@ public class ReportGenerator {
         
         GenerateSummary(ctx);
         GenerateCallgraph(ctx);
-        GenerateDetails(ctx, results);
+        GenerateDetails(ctx, reportEntries);
         
         StringWriter writer = new StringWriter();
         t.merge(ctx, writer);
@@ -140,7 +133,7 @@ public class ReportGenerator {
 		ctx.put("callgraph", "");   
 	}
 	
-	private void GenerateDetails(VelocityContext ctx, HashMap<Source, HashMap<Node, LinkedList<Node>>> results) throws IOException {
+	private void GenerateDetails(VelocityContext ctx, ArrayList<ReportEntry> reportEntries) throws IOException {
 		
 		BufferedReader fileJavaReader;
 		
@@ -148,23 +141,23 @@ public class ReportGenerator {
 		StringBuilder code = new StringBuilder();
 		StringBuilder lines;
 		
-		for(Entry<Source, HashMap<Node, LinkedList<Node>>> result : results.entrySet()) {
-			Source source = result.getKey();
-			String javaFile = source.javaFile;
-			ArrayList<Integer> lineNumbers = source.lineNumbers;
-			ArrayList<Integer> methodSignatureLineNumbers = source.methodSignatureLineNumbers;
-			for(Entry<Node, LinkedList<Node>> entry : result.getValue().entrySet()) {
-				Node node = entry.getKey();
-				CGNode entryNode = node.cgNode;
-				ICostResult costResult = node.costResult;
-				LinkedList<Node> callstack = entry.getValue();
-				IMethod method = entryNode.getMethod();
+		for(ReportEntry reportEntry : reportEntries) {
+			String javaFile = reportEntry.getSource();
+			for(Entry<CGNode, ICostResult> entry : reportEntry.getEntries().entrySet()) {
+				CGNode cgNode = entry.getKey();
+				ICostResult cost = entry.getValue();
+				Set<Integer> lineNumbers = reportEntry.getLineNumbers(cgNode);
+				String packages = reportEntry.getPackage();
+				if(packages.equals(""))
+					packages = "default";
+				
+				IMethod method = cgNode.getMethod();
 				String methodName = method.getName().toString();
 				String guid = java.util.UUID.randomUUID().toString();
 				
 				/* Control-Flow Graph */
 				try {
-					GenerateCFG(entryNode.getIR().getControlFlowGraph(), guid);
+					GenerateCFG(cgNode.getIR().getControlFlowGraph(), guid);
 				}catch(WalaException e) {
 					System.err.println("Could not generate report: " + e.getMessage());
 					continue;
@@ -175,8 +168,8 @@ public class ReportGenerator {
 				
 				/* Sub-menu */
 				sidemenu.append("<ul class=\"nav nav-list\">");
-				sidemenu.append("<li><i class=\"icon-certificate icon-black\"></i>Cost: " + costResult.getCostScalar() + "</li>\n");
-				sidemenu.append("<li><i class=\"icon-file icon-black\"></i>Package: " + " N/A " + "</li>\n");
+				sidemenu.append("<li><i class=\"icon-certificate icon-black\"></i>Cost: " + cost.getCostScalar() + "</li>\n");
+				sidemenu.append("<li><i class=\"icon-file icon-black\"></i>Package: " + packages + "</li>\n");
 				String className = method.getDeclaringClass().getName().toString();
 				sidemenu.append("<li><i class=\"icon-file icon-black\"></i>Class:   " + className + "</li>\n");	
 				String href = PDF_DIR + File.separatorChar + guid + ".pdf";
@@ -184,12 +177,15 @@ public class ReportGenerator {
 				sidemenu.append("<li><a href=\"#\"><i class=\"icon-align-justify icon-black\"></i>Callstack</a></li>\n");
 				sidemenu.append("</ul>\n");
 				
-				fileJavaReader = new BufferedReader(new FileReader(javaFile));
 				lines = new StringBuilder();
-				for(int i = 0; i < lineNumbers.size() - 1; i++) {
-					lines.append(lineNumbers.get(i) + ", ");
+				Iterator<Integer> linesIterator = lineNumbers.iterator();
+				while(linesIterator.hasNext()) {
+					lines.append(linesIterator.next());
+					if(linesIterator.hasNext())
+						lines.append(", ");
 				}
-				lines.append(lineNumbers.get(lineNumbers.size() - 1));
+				
+				fileJavaReader = new BufferedReader(new FileReader(javaFile));
 				
 				code.append("<div id=\"code-" + guid + "\">\n");
 				code.append("<pre class=\"brush: java; highlight: [" + lines + "]\">\n");

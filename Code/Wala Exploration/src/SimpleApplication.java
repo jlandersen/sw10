@@ -1,6 +1,7 @@
+
 public class SimpleApplication {
 	
-	private static void hey() throws Exception {
+	public static void hey() throws Exception {
 		new Object();
 		
 		for(int i = 0; i < 20; i++) { //@ loopbound = 20
@@ -11,7 +12,7 @@ public class SimpleApplication {
 		throw new Exception();
 	}
 	
-	private static ILOL goodbye(int x) {
+	public static ILOL goodbye(int x) {
 		try {
 			hey();
 		} catch (Exception e) {

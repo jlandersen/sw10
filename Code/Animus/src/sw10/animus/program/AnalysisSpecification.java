@@ -1,23 +1,34 @@
 package sw10.animus.program;
 
+import java.util.LinkedList;
+
+import com.ibm.wala.ipa.callgraph.CGNode;
+import com.ibm.wala.types.MethodReference;
+import com.ibm.wala.util.strings.StringStuff;
+
+import sw10.animus.build.AnalysisEnvironment;
 import sw10.animus.build.JVMModel;
 
 public class AnalysisSpecification {
-	public enum AnalysisType { ALL, STACK, ALLOCATIONS };
 	private static AnalysisSpecification singletonObject;
+	public enum AnalysisType { ALL, STACK, ALLOCATIONS };
+	
 	private String applicationJar;
 	private boolean jarIncludesStdLibraries;
 	private String sourceFilesRootDir;
 	private String outputDir;
 	private String mainClass;
-	private String[] entryPoints;
-	private AnalysisType typeOfAnalysisPerformed;
-	private boolean shouldGenerateAnalysisReports;
+	private String[] entryPointSignatures;
+	private AnalysisType analysisType;
+	private boolean generateAnalysisReports;
 	private JVMModel jvmModel;
 	
+	private LinkedList<CGNode> entryPointCGNodes;
+	
 	private AnalysisSpecification() {
-		this.typeOfAnalysisPerformed = AnalysisType.ALL;
-		this.shouldGenerateAnalysisReports = true;
+		this.analysisType = AnalysisType.ALL;
+		this.generateAnalysisReports = true;
+		this.entryPointCGNodes = new LinkedList<CGNode>();
 	}
 	
 	public static synchronized AnalysisSpecification getAnalysisSpecification() {
@@ -67,29 +78,28 @@ public class AnalysisSpecification {
 		this.mainClass = mainClass;
 	}
 	
-	public String[] getEntryPoints() {
-		return entryPoints;
+	public String[] getEntryPointSignatures() {
+		return entryPointSignatures;
 	}
 	
-	public void setEntryPoints(String methods) {
-		entryPoints = methods.split(",");		
+	public void setEntryPointSignatures(String methods) {
+		entryPointSignatures = methods.split(",");		
 	}
 	
 	public AnalysisType getTypeOfAnalysisPerformed() {
-		return typeOfAnalysisPerformed;
+		return analysisType;
 	}
 	
 	public void setTypeOfAnalysisPerformed(AnalysisType typeOfAnalysisPerformed) {
-		this.typeOfAnalysisPerformed = typeOfAnalysisPerformed;
+		this.analysisType = typeOfAnalysisPerformed;
 	}
 	
 	public Boolean getShouldGenerateAnalysisReports() {
-		return shouldGenerateAnalysisReports;
+		return generateAnalysisReports;
 	}
 	
-	public void setShouldGenerateAnalysisReports(
-			Boolean shouldGenerateAnalysisReports) {
-		this.shouldGenerateAnalysisReports = shouldGenerateAnalysisReports;
+	public void setShouldGenerateAnalysisReports(boolean generateAnalysisReports) {
+		this.generateAnalysisReports = generateAnalysisReports;
 	}
 
 	public JVMModel getJvmModel() {
@@ -98,5 +108,25 @@ public class AnalysisSpecification {
 
 	public void setJvmModel(JVMModel jvmModel) {
 		this.jvmModel = jvmModel;
-	} 		
+	}
+	
+	public LinkedList<CGNode> getEntryPointCGNodes() {
+		AnalysisEnvironment environment = AnalysisEnvironment.getAnalysisEnvironment();
+		String[] entryPointSignatures = getEntryPointSignatures();
+		if(entryPointSignatures == null) {
+			CGNode entryNode = environment.getCallGraph().getEntrypointNodes().iterator().next();
+			entryPointCGNodes.add(entryNode);
+		} else {
+			for(String entryPoint : entryPointSignatures) {
+				MethodReference mr = StringStuff.makeMethodReference(entryPoint);
+				CGNode entryNode = environment.getCallGraph().getNodes(mr).iterator().next();
+				entryPointCGNodes.add(entryNode);
+			}	
+		}
+		return entryPointCGNodes;
+	}
+	
+	public boolean isEntryPointCGNode(CGNode cgNode) {
+		return entryPointCGNodes.contains(cgNode);
+	}
 }

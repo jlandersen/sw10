@@ -3,7 +3,6 @@ package sw10.animus.analysis;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.ibm.wala.ipa.callgraph.CGNode;
 import com.ibm.wala.types.TypeName;
 
 public class CostResultMemory implements ICostResult {

@@ -1,21 +1,19 @@
 package sw10.animus.analysis;
-import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NoSuchElementException;
+import java.util.Set;
 
 import net.sf.javailp.Problem;
 import net.sf.javailp.Result;
 import sw10.animus.analysis.ICostResult.ResultType;
 import sw10.animus.build.JVMModel;
-import sw10.animus.reports.Compactor;
+import sw10.animus.program.AnalysisSpecification;
 import sw10.animus.util.FileScanner;
-import sw10.animus.util.Util;
 
-import com.ibm.wala.cfg.InducedCFG.BasicBlock;
 import com.ibm.wala.classLoader.IBytecodeMethod;
-import com.ibm.wala.classLoader.IClass;
 import com.ibm.wala.classLoader.IMethod;
 import com.ibm.wala.ipa.callgraph.CGNode;
 import com.ibm.wala.shrikeCT.InvalidClassFileException;
@@ -30,10 +28,12 @@ public class CostComputerMemory implements ICostComputer<CostResultMemory> {
 
 	private JVMModel model;
 	private AnalysisResults analysisResults;
+	private AnalysisSpecification analysisSpecification;
 	
 	public CostComputerMemory(JVMModel model) {
 		this.model = model;
 		this.analysisResults = AnalysisResults.getAnalysisResults();
+		this.analysisSpecification = AnalysisSpecification.getAnalysisSpecification();
 	}
 
 	@Override
@@ -60,20 +60,23 @@ public class CostComputerMemory implements ICostComputer<CostResultMemory> {
 		}
 		results.allocationCost = lpResults.getObjective().intValue();
 		
-		IMethod method = cgNode.getMethod();
-		IClass methodClass = method.getDeclaringClass();
-		String classLoader = methodClass.getClassLoader().getName().toString();
 		IBytecodeMethod bytecodeMethod = null;
 		String javaFileName = null;
 		SSACFG cfg = null;
-		if(classLoader.equals("Application")) {
+		Set<Integer> lines = null;
+		String sourceFilePath = null;
+
+		boolean isEntryPointCGNode = analysisSpecification.isEntryPointCGNode(cgNode);
+		
+		if(isEntryPointCGNode) {
+			IMethod method = cgNode.getMethod();
 			bytecodeMethod = (IBytecodeMethod)method;
 			javaFileName = bytecodeMethod.getDeclaringClass().getSourceFileName();
 			cfg = cgNode.getIR().getControlFlowGraph();
+			
+			lines = new HashSet<Integer>();
+			sourceFilePath = FileScanner.getFullPath(javaFileName);
 		}
-		
-		ArrayList<Integer> lines = new ArrayList<Integer>();
-		String fullPath = FileScanner.getFullPath(javaFileName);
 		
 		Collection<Object> allVariables = problem.getVariables();
 		for(Object var : allVariables) {
@@ -85,7 +88,7 @@ public class CostComputerMemory implements ICostComputer<CostResultMemory> {
 						continue;
 					int blockDstID = edges.snd;
 					
-					if(classLoader.equals("Application")) {
+					if(isEntryPointCGNode) {
 						SSACFG.BasicBlock blockDst = cfg.getBasicBlock(blockDstID);
 						try {
 							if(blockDst.getFirstInstructionIndex() >= 0) {
@@ -129,9 +132,9 @@ public class CostComputerMemory implements ICostComputer<CostResultMemory> {
 				}
 			}
 		}
-		
-		if(classLoader.equals("Application")) {
-			analysisResults.a
+
+		if(isEntryPointCGNode) {
+			analysisResults.addReportData(sourceFilePath, lines, cgNode, results);
 		}
 		
 		results.resultType = ResultType.COMPLETE_NODE_RESULT;

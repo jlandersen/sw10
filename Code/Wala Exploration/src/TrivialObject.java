@@ -1,4 +1,6 @@
 
+
+
 public class TrivialObject implements ILOL {
 
 	@Override
@@ -8,7 +10,6 @@ public class TrivialObject implements ILOL {
 
 	@Override
 	public ILOL hello() {
-		// TODO Auto-generated method stub
 		return null;
 	}
 }

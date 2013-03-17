@@ -4,6 +4,8 @@ import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
+import sw10.animus.program.AnalysisSpecification;
+
 public class FileScanner {
 	
 	private static Map<String, File> mapping = new HashMap<String, File>(); 
@@ -25,7 +27,12 @@ public class FileScanner {
 		return mapping;
 	}
 	
-	public static String getFullPath(String fileName) {
+	/* Relative path from source files root directory
+	 * 
+	 * Args: 	exampleFile.java
+	 * Returns: examplePackage/exampleFile.java 
+	 */
+	public static String getRelativePath(String fileName) {
 		fileName = fileName.substring(0, fileName.indexOf('.'));
 		String fullPath = "";
 		for(String path : mapping.keySet()) {
@@ -35,6 +42,16 @@ public class FileScanner {
 			}
 		}
 		return fullPath;
+	}
+	
+	/* Full path on file system
+	 * 
+	 * Args:	exampleFile.java
+	 * Returns: /Users/../exampleFile.java 
+	 */
+	public static String getFullPath(String fileName) {
+		String path = AnalysisSpecification.getAnalysisSpecification().getSourceFilesRootDir();
+		return path + File.separatorChar + getRelativePath(fileName);
 	}
 }
 

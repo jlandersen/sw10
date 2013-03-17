@@ -1,4 +1,6 @@
 
+
+
 public class SimpleObject implements ILOL {
 
 	@Override
@@ -8,7 +10,6 @@ public class SimpleObject implements ILOL {
 
 	@Override
 	public ILOL hello() {
-		// TODO Auto-generated method stub
 		return null;
 	}
 }
