@@ -60,8 +60,6 @@ public class ReportGenerator {
 		System.out.println(RESOURCES_DIR);
 		System.out.println(DT_DIR);
 		System.out.println(PDF_DIR);
-		
-		createOutputDirectories();
 	}
 	
 	private void createOutputDirectories() {
@@ -80,22 +78,25 @@ public class ReportGenerator {
 	}
 	
 	public void Generate(ArrayList<ReportEntry> reportEntries) throws IOException {
+		createOutputDirectories();
+
 		VelocityEngine ve = new VelocityEngine();
 		ve.init();
         Template t = ve.getTemplate("templates/index.vm");
         VelocityContext ctx = new VelocityContext();
         
+        /* CSS and JS */
         String webDir = new File(".").getCanonicalPath() + "/web/";
         GenerateCSSIncludes(ctx, webDir);
         GenerateJSIncludes(ctx, webDir);
         
+        /* Pages */
         GenerateSummary(ctx);
         GenerateCallgraph(ctx);
         GenerateDetails(ctx, reportEntries);
         
         StringWriter writer = new StringWriter();
         t.merge(ctx, writer);
-       
         String filecontent = writer.toString();
 
         File htmlFile = new File(OUTPUT_DIR + File.separatorChar + INDEX_HTML);
@@ -150,7 +151,7 @@ public class ReportGenerator {
 				String packages = reportEntry.getPackage();
 				if(packages.equals(""))
 					packages = "default";
-				
+								
 				IMethod method = cgNode.getMethod();
 				String methodName = method.getName().toString();
 				String guid = java.util.UUID.randomUUID().toString();
