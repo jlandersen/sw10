@@ -46,7 +46,6 @@ public class AnalysisResults {
 	}
 	
 	public void addReportData(final String sourceFilePath, final Set<Integer> lines, final CGNode cgNode, final ICostResult cost) {
-		/* Form package */
 		int startIndex = analysisSpecification.getSourceFilesRootDir().length();
 		int stopIndex = sourceFilePath.lastIndexOf('/');
 		final String packages = sourceFilePath.substring(startIndex, stopIndex).replace('/', '.');
@@ -60,7 +59,6 @@ public class AnalysisResults {
 			}
 		}	
 
-		/* Create new report entry */
 		reportEntries.add(new ReportEntry() {{
 			setSource(sourceFilePath);
 			addEntry(cgNode, cost);

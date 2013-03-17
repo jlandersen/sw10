@@ -10,10 +10,10 @@ import sw10.animus.analysis.ICostResult;
 import com.ibm.wala.ipa.callgraph.CGNode;
 
 /* 
- * Class for holding the report representative data   
+ * Class for holding report representative data   
  */
 public class ReportEntry {
-	/* full path to java source file */
+	/* Full path to java source file */
 	private String source;
 	
 	/* Package from source root directory */
@@ -22,7 +22,7 @@ public class ReportEntry {
 	/* Entry nodes and their results  */
 	private Map<CGNode, ICostResult> costByEntry;
 	
-	/* Line numbers to highlight */
+	/* Line numbers to highlight for each node */
 	private Map<CGNode, Set<Integer>> lineNumbersByEntry;
 	
 	/* Referenced nodes with their respective results for a given entry node */

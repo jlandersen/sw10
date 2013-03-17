@@ -131,7 +131,9 @@ public class Analyzer {
 		try {
 			sanitized = Util.sanitize(ir, environment.getClassHierarchy());
 		} catch (IllegalArgumentException e) {
+			
 		} catch (WalaException e) {
+			
 		}
 		SlowSparseNumberedLabeledGraph<ISSABasicBlock, String> cfg = sanitized.fst;
 		Map<String, Pair<Integer, Integer>> edgeLabelToNodesIDs = sanitized.snd;
