@@ -35,6 +35,7 @@ import com.ibm.wala.classLoader.IBytecodeMethod;
 import com.ibm.wala.classLoader.IClass;
 import com.ibm.wala.classLoader.IMethod;
 import com.ibm.wala.ipa.callgraph.CGNode;
+import com.ibm.wala.ipa.callgraph.CallGraph;
 import com.ibm.wala.shrikeCT.InvalidClassFileException;
 import com.ibm.wala.ssa.IR;
 import com.ibm.wala.ssa.ISSABasicBlock;
@@ -58,12 +59,14 @@ public class Analyzer {
 	private ICostComputer<ICostResult> costComputer;
 	private AnalysisEnvironment environment;
 	private AnalysisResults results;
+	private StackAnalyzer stackAnalyzer;
 	
 	private Analyzer() {
 		this.environment = AnalysisEnvironment.getAnalysisEnvironment();
 		this.specification = AnalysisSpecification.getAnalysisSpecification();
 		this.extractor = new AnnotationExtractor();		
 		this.results = AnalysisResults.getAnalysisResults();
+		this.stackAnalyzer = new StackAnalyzer();
 	}
 
 	public static Analyzer makeAnalyzer() {
@@ -75,14 +78,23 @@ public class Analyzer {
 
 		LinkedList<CGNode> entryCGNodes = specification.getEntryPointCGNodes();	
 		
+		AnalysisEnvironment env = AnalysisEnvironment.getAnalysisEnvironment();
+		CallGraph cg = env.getCallGraph();
 		for(CGNode entryNode : entryCGNodes) {
 			ICostResult results = analyzeNode(entryNode);
 			CostResultMemory memRes = (CostResultMemory)results;				
 			System.out.println("Worst case allocation for " + entryNode.getMethod().toString() + ":" + results.getCostScalar());
 			for(Entry<TypeName, Integer> i : memRes.countByTypename.entrySet()) {
-				System.out.println("\t" + i.getKey().toString() + " - " + i.getValue());
+				System.out.println("\t TYPE_NAME " + i.getKey().toString() + " COUNT " + i.getValue());
+			}
+			for(Entry<Integer, TypeName> i : memRes.typeNameByNodeId.entrySet()) {
+				System.out.println("\t NODE_ID " + i.getKey().toString() + " CFG_NODE: " + cg.getNode(i.getKey()) + " TYPE_NAME " + i.getValue());
 			}
 		}
+		
+		stackAnalyzer.analyze();
+		stackAnalyzer.print();
+		
 		
 		/*
 		if (entryPoints == null) {
@@ -117,6 +129,11 @@ public class Analyzer {
 		
 		ReportGenerator gen = new ReportGenerator();
 		gen.Generate(AnalysisResults.getAnalysisResults().getReportEntries());
+	}
+
+	private void analyzeStacks() {
+		CallGraph cg = environment.getCallGraph();
+		
 	}
 
 	public ICostResult analyzeNode(CGNode cgNode) {
@@ -341,6 +358,7 @@ public class Analyzer {
 			if(inst.isDispatch()) {	// invokevirtual
 				CallSiteReference callSiteRef = inst.getCallSite();
 				Set<CGNode> possibleTargets = environment.getCallGraph().getPossibleTargets(node, callSiteRef);
+				stackAnalyzer.addNode(node, possibleTargets);
 				ICostResult maximumResult = null;
 				ICostResult tempResult = null;
 				for(CGNode target : Iterator2Iterable.make(possibleTargets.iterator())) {
@@ -352,6 +370,7 @@ public class Analyzer {
 			} else { // invokestatic or invokespecial
 				MethodReference targetRef = inst.getDeclaredTarget();
 				Set<CGNode> targets = environment.getCallGraph().getNodes(targetRef);
+				stackAnalyzer.addNode(node, targets);
 				CGNode target = targets.iterator().next();
 				return analyzeNode(target);
 			}

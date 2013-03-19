@@ -17,17 +17,21 @@ import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.context.Context;
 
+import sw10.animus.analysis.CostResultMemory;
 import sw10.animus.analysis.ICostResult;
+import sw10.animus.build.AnalysisEnvironment;
 import sw10.animus.program.AnalysisSpecification;
 
 import com.ibm.wala.classLoader.IMethod;
 import com.ibm.wala.examples.properties.WalaExamplesProperties;
 import com.ibm.wala.ipa.callgraph.CGNode;
+import com.ibm.wala.ipa.callgraph.CallGraph;
 import com.ibm.wala.properties.WalaProperties;
 import com.ibm.wala.ssa.ISSABasicBlock;
 import com.ibm.wala.ssa.SSACFG;
 import com.ibm.wala.ssa.SSACFG.BasicBlock;
 import com.ibm.wala.ssa.SSAInstruction;
+import com.ibm.wala.types.TypeName;
 import com.ibm.wala.util.WalaException;
 import com.ibm.wala.util.collections.HashMapFactory;
 import com.ibm.wala.viz.DotUtil;
@@ -36,11 +40,13 @@ import com.ibm.wala.viz.NodeDecorator;
 public class ReportGenerator {
 
 	private AnalysisSpecification specification;
+	private AnalysisEnvironment environment;
 	
 	private final String RESOURCES = "resources";
 	private final String DT = "dt";
 	private final String PDF = "pdf";
 	private final String INDEX_HTML = "index.html";
+	private final String CALL_GRAPH = "callGraph";
 	
 	private String OUTPUT_DIR;
 	private String RESOURCES_DIR;
@@ -49,32 +55,13 @@ public class ReportGenerator {
 	
 	public ReportGenerator() throws IOException {
 		this.specification = AnalysisSpecification.getAnalysisSpecification();
+		this.environment = AnalysisEnvironment.getAnalysisEnvironment();
 		
 		String outputDir = specification.getOutputDir();
 		this.OUTPUT_DIR = outputDir;
 		this.RESOURCES_DIR = outputDir + File.separatorChar + RESOURCES;
 		this.DT_DIR = outputDir + File.separatorChar + RESOURCES + File.separatorChar + DT;
 		this.PDF_DIR = outputDir + File.separatorChar + RESOURCES + File.separatorChar + PDF;
-		
-		System.out.println(OUTPUT_DIR);
-		System.out.println(RESOURCES_DIR);
-		System.out.println(DT_DIR);
-		System.out.println(PDF_DIR);
-	}
-	
-	private void createOutputDirectories() {
-		File outputDir = new File(OUTPUT_DIR);
-		if(!outputDir.exists()) {
-			try {
-				outputDir.mkdir();
-				new File(RESOURCES_DIR).mkdir();
-				new File(DT_DIR).mkdir();
-				new File(PDF_DIR).mkdir();
-			} catch (SecurityException e) {
-				System.err.println("Could not create output directories");
-				e.printStackTrace();
-			}
-		}
 	}
 	
 	public void Generate(ArrayList<ReportEntry> reportEntries) throws IOException {
@@ -131,6 +118,11 @@ public class ReportGenerator {
 	}
 	
 	private void GenerateCallgraph(VelocityContext ctx) {
+		try {
+			GenerateCG(environment.getCallGraph());
+		} catch (WalaException e) {
+			System.err.println("Could not generate callgraph");
+		}
 		ctx.put("callgraph", "");   
 	}
 	
@@ -155,6 +147,11 @@ public class ReportGenerator {
 				IMethod method = cgNode.getMethod();
 				String methodName = method.getName().toString();
 				String guid = java.util.UUID.randomUUID().toString();
+				
+				CostResultMemory memCost = (CostResultMemory)cost;
+				for(Entry<Integer, TypeName> e : memCost.typeNameByNodeId.entrySet()) {
+					System.out.println("TYPE " + e.getValue().toString());
+				}
 				
 				/* Control-Flow Graph */
 				try {
@@ -244,5 +241,45 @@ public class ReportGenerator {
 	        }
 	    };
 		DotUtil.dotify(cfg, labels, dotFile, psFile, dotExe);
+	}
+	
+	private void GenerateCG(CallGraph callGraph) throws WalaException{
+		Properties wp = WalaProperties.loadProperties();
+	    wp.putAll(WalaExamplesProperties.loadProperties());
+
+	    String psFile = PDF_DIR + File.separatorChar + CALL_GRAPH  + ".pdf";	
+	    String dotFile = DT_DIR + File.separatorChar + CALL_GRAPH + ".dt";
+	    String dotExe = wp.getProperty(WalaExamplesProperties.DOT_EXE);
+	    
+	    final HashMap<CGNode, String> labelMap = HashMapFactory.make();
+	    for (Iterator<CGNode> iteratorCallGraph = callGraph.iterator(); iteratorCallGraph.hasNext();) {
+	        CGNode cgNode = iteratorCallGraph.next();
+	        
+	        StringBuilder label = new StringBuilder();
+	        label.append(cgNode.toString());
+	        labelMap.put(cgNode, label.toString());
+	    }
+	    
+	    NodeDecorator labels = new NodeDecorator() {
+	        public String getLabel(Object o) {
+	            return labelMap.get(o);
+	        }
+	    };
+		DotUtil.dotify(callGraph, labels, dotFile, psFile, dotExe);
+	}
+	
+	private void createOutputDirectories() {
+		File outputDir = new File(OUTPUT_DIR);
+		if(!outputDir.exists()) {
+			try {
+				outputDir.mkdir();
+				new File(RESOURCES_DIR).mkdir();
+				new File(DT_DIR).mkdir();
+				new File(PDF_DIR).mkdir();
+			} catch (SecurityException e) {
+				System.err.println("Could not create output directories");
+				e.printStackTrace();
+			}
+		}
 	}
 }

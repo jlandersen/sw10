@@ -108,8 +108,7 @@ public class CostComputerMemory implements ICostComputer<CostResultMemory> {
 							count += lpResults.getPrimalValue(var).intValue();
 							results.countByTypename.put(typeName, count);
 						}
-						else
-						{
+						else {
 							results.countByTypename.put(typeName, lpResults.getPrimalValue(var).intValue());
 						}
 					}
@@ -152,8 +151,7 @@ public class CostComputerMemory implements ICostComputer<CostResultMemory> {
 	}
 	
 	@Override
-	public void addCostAndContext(CostResultMemory fromResult,
-			CostResultMemory toResult) {
+	public void addCostAndContext(CostResultMemory fromResult, CostResultMemory toResult) {
 		toResult.allocationCost += fromResult.getCostScalar();
 		toResult.typeNameByNodeId.putAll(fromResult.typeNameByNodeId);
 	}
