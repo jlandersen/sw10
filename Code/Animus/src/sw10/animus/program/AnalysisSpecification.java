@@ -111,6 +111,10 @@ public class AnalysisSpecification {
 	}
 	
 	public LinkedList<CGNode> getEntryPointCGNodes() {
+		return entryPointCGNodes;
+	}
+	
+	public LinkedList<CGNode> setEntryPointCGNodes() {
 		AnalysisEnvironment environment = AnalysisEnvironment.getAnalysisEnvironment();
 		String[] entryPointSignatures = getEntryPointSignatures();
 		if(entryPointSignatures == null) {

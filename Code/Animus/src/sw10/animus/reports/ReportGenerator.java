@@ -17,6 +17,7 @@ import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.context.Context;
 
+import sw10.animus.analysis.AnalysisResults;
 import sw10.animus.analysis.CostResultMemory;
 import sw10.animus.analysis.ICostResult;
 import sw10.animus.build.AnalysisEnvironment;
@@ -41,6 +42,7 @@ public class ReportGenerator {
 
 	private AnalysisSpecification specification;
 	private AnalysisEnvironment environment;
+	private AnalysisResults analysisResults;
 	
 	private final String RESOURCES = "resources";
 	private final String DT = "dt";
@@ -56,6 +58,7 @@ public class ReportGenerator {
 	public ReportGenerator() throws IOException {
 		this.specification = AnalysisSpecification.getAnalysisSpecification();
 		this.environment = AnalysisEnvironment.getAnalysisEnvironment();
+		this.analysisResults = AnalysisResults.getAnalysisResults();
 		
 		String outputDir = specification.getOutputDir();
 		this.OUTPUT_DIR = outputDir;
@@ -149,9 +152,6 @@ public class ReportGenerator {
 				String guid = java.util.UUID.randomUUID().toString();
 				
 				CostResultMemory memCost = (CostResultMemory)cost;
-				for(Entry<Integer, TypeName> e : memCost.typeNameByNodeId.entrySet()) {
-					System.out.println("TYPE " + e.getValue().toString());
-				}
 				
 				/* Control-Flow Graph */
 				try {
@@ -172,7 +172,8 @@ public class ReportGenerator {
 				sidemenu.append("<li><i class=\"icon-file icon-black\"></i>Class:   " + className + "</li>\n");	
 				String href = PDF_DIR + File.separatorChar + guid + ".pdf";
 				sidemenu.append("<li><a data-fancybox-type=\"iframe\" class=\"cfgViewer\" href=\"" + href + "\"><i class=\"icon-refresh icon-black\"></i>Control-Flow Graph</a></li>\n");
-				sidemenu.append("<li><a href=\"#\"><i class=\"icon-align-justify icon-black\"></i>Callstack</a></li>\n");
+				href = guid;
+				sidemenu.append("<li><a id=\"methodref-" + guid + "\" href=\"#\"><i class=\"icon-align-justify icon-black\"></i>Referenced Methods</a></li>\n");
 				sidemenu.append("</ul>\n");
 				
 				lines = new StringBuilder();
@@ -185,22 +186,31 @@ public class ReportGenerator {
 				
 				fileJavaReader = new BufferedReader(new FileReader(javaFile));
 				
+				/* Code section */
 				code.append("<div id=\"code-" + guid + "\">\n");
-				code.append("<pre class=\"brush: java; highlight: [" + lines + "]\">\n");
+				code.append("<pre class=\"brush: java; highlight: [" + lines + "]\">\n&nbsp;");
 				
-				//int count = 0;
 				String line;
 		        while ((line = fileJavaReader.readLine()) != null) {
 		        	code.append(line + "\n");
-		        	//if(methodSignatureLineNumbers.contains(count)) {
-		        		//code.append("</pre>");
-		        		//code.append("<a name=\"" + guid + "\"></a> ");
-		        		//code.append("<pre class=\"brush: java; highlight: [" + lines + "]\">\n");
-		        	//}
-		        	//count++;
 		        }
 		        code.append("</pre>");
 				code.append("</div>");
+				
+				/* Referenced Methods div */
+				code.append("<div id=\"ref-" + guid + "\" style=\"display:none;\">\n");
+				for(CGNode refCGNode : memCost.worstcaseReferencesMethods) {
+					IMethod refMethod = refCGNode.getMethod();
+					String refMethodName = refMethod.getName().toString();
+					code.append("REF : " + refMethodName + "<br/>");
+					CostResultMemory refCGNodeCost = (CostResultMemory)analysisResults.getResultsForNode(refCGNode);
+					code.append("COST : " + refCGNodeCost.getCostScalar() + "<br/>");
+					for(Entry<TypeName, Integer> countByTypename : refCGNodeCost.countByTypename.entrySet()) {
+						code.append("Type " + countByTypename.getKey().toString() + " count " + countByTypename.getValue() + "<br/>");
+					}
+					
+				}
+				code.append("</div>");		
 			}
 		}
 		ctx.put("sidemenu", sidemenu.toString());

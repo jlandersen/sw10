@@ -76,56 +76,21 @@ public class Analyzer {
 	public void start(Class<? extends ICostComputer<ICostResult>> costComputerType) throws InstantiationException, IllegalAccessException, IllegalArgumentException, WalaException, IOException, SecurityException, InvocationTargetException, NoSuchMethodException {
 		this.costComputer = costComputerType.getDeclaredConstructor(JVMModel.class).newInstance(specification.getJvmModel());
 
+		specification.setEntryPointCGNodes();
 		LinkedList<CGNode> entryCGNodes = specification.getEntryPointCGNodes();	
-		
+
 		AnalysisEnvironment env = AnalysisEnvironment.getAnalysisEnvironment();
 		CallGraph cg = env.getCallGraph();
 		for(CGNode entryNode : entryCGNodes) {
 			ICostResult results = analyzeNode(entryNode);
 			CostResultMemory memRes = (CostResultMemory)results;				
 			System.out.println("Worst case allocation for " + entryNode.getMethod().toString() + ":" + results.getCostScalar());
-			for(Entry<TypeName, Integer> i : memRes.countByTypename.entrySet()) {
+			for(Entry<TypeName, Integer> i : memRes.aggregatedCountByTypename.entrySet()) {
 				System.out.println("\t TYPE_NAME " + i.getKey().toString() + " COUNT " + i.getValue());
-			}
-			for(Entry<Integer, TypeName> i : memRes.typeNameByNodeId.entrySet()) {
-				System.out.println("\t NODE_ID " + i.getKey().toString() + " CFG_NODE: " + cg.getNode(i.getKey()) + " TYPE_NAME " + i.getValue());
 			}
 		}
 		
 		stackAnalyzer.analyze();
-		stackAnalyzer.print();
-		
-		
-		/*
-		if (entryPoints == null) {
-			CGNode entryNode = environment.getCallGraph().getEntrypointNodes().iterator().next();
-			this.entryPoints.add(entryNode);
-			System.out.println(entryNode.getMethod().toString());
-			ICostResult results = analyzeNode(entryNode);
-			System.out.println("Worst case allocation:" + results.getCostScalar());
-		}
-		else
-		{
-			for(String entryPoint : entryPoints) {
-				MethodReference mr = StringStuff.makeMethodReference(entryPoint);
-				CGNode entryNode = null;
-				try {
-					entryNode = environment.getCallGraph().getNodes(mr).iterator().next();
-					this.entryPoints.add(entryNode);
-				}
-				catch (NoSuchElementException e) {
-					System.err.println(entryPoint + " is not part of the call graph!");
-					continue;
-				}
-				ICostResult results = analyzeNode(entryNode);
-				CostResultMemory memRes = (CostResultMemory)results;				
-				System.out.println("Worst case allocation for " + entryNode.getMethod().toString() + ":" + results.getCostScalar());
-				for(Entry<TypeName, Integer> i : memRes.countByTypename.entrySet()) {
-					System.out.println("\t" + i.getKey().toString() + " - " + i.getValue());
-				}
-			}
-		}
-		*/
 		
 		ReportGenerator gen = new ReportGenerator();
 		gen.Generate(AnalysisResults.getAnalysisResults().getReportEntries());
@@ -170,6 +135,7 @@ public class Analyzer {
 		BFSIterator<ISSABasicBlock> iteratorBFSOrdering = new BFSIterator<ISSABasicBlock>(cfg);
 		Map<Integer, ICostResult> calleeNodeResultsByBlockGraphId = new HashMap<Integer, ICostResult>();
 		Set<ICostResult> calleeNodeResultsAlreadyFound = new HashSet<ICostResult>();
+		Set<Integer> nodesThatAreInvokes = new HashSet<Integer>();
 		
 		ICostResult intermediateResults = null;
 
@@ -234,9 +200,13 @@ public class Analyzer {
 						calleeNodeResultsAlreadyFound.add(costForBlock);
 					}
 					
+					if (costForBlock.isFinalNodeResult()) {
+						nodesThatAreInvokes.add(currentBlock.getGraphNodeId());
+					}
+					
 					if (intermediateResults != null) {
 						if (costForBlock.isFinalNodeResult()) {
-							costComputer.addCost(costForBlock, intermediateResults);	
+							costComputer.addCost(costForBlock, intermediateResults);
 						}
 						else
 						{
@@ -358,7 +328,6 @@ public class Analyzer {
 			if(inst.isDispatch()) {	// invokevirtual
 				CallSiteReference callSiteRef = inst.getCallSite();
 				Set<CGNode> possibleTargets = environment.getCallGraph().getPossibleTargets(node, callSiteRef);
-				stackAnalyzer.addNode(node, possibleTargets);
 				ICostResult maximumResult = null;
 				ICostResult tempResult = null;
 				for(CGNode target : Iterator2Iterable.make(possibleTargets.iterator())) {
@@ -370,7 +339,6 @@ public class Analyzer {
 			} else { // invokestatic or invokespecial
 				MethodReference targetRef = inst.getDeclaredTarget();
 				Set<CGNode> targets = environment.getCallGraph().getNodes(targetRef);
-				stackAnalyzer.addNode(node, targets);
 				CGNode target = targets.iterator().next();
 				return analyzeNode(target);
 			}

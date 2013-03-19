@@ -15,6 +15,7 @@ import sw10.animus.util.FileScanner;
 
 import com.ibm.wala.classLoader.IBytecodeMethod;
 import com.ibm.wala.classLoader.IMethod;
+import com.ibm.wala.classLoader.ShrikeBTMethod;
 import com.ibm.wala.ipa.callgraph.CGNode;
 import com.ibm.wala.shrikeCT.InvalidClassFileException;
 import com.ibm.wala.ssa.ISSABasicBlock;
@@ -54,11 +55,12 @@ public class CostComputerMemory implements ICostComputer<CostResultMemory> {
 
 	@Override
 	public CostResultMemory getFinalResultsFromContextResultsAndLPSolutions(CostResultMemory resultsContext, Result lpResults, Problem problem, Map<String, Pair<Integer, Integer>> edgeLabelToNodesIDs, Map<Integer, ICostResult> calleeResultsAtGraphNodeIdByResult, CGNode cgNode) {
-		CostResultMemory results = new CostResultMemory();
+		CostResultMemory results = new CostResultMemory();		
 		if (resultsContext != null) {
 			results.typeNameByNodeId.putAll(resultsContext.typeNameByNodeId);
 		}
 		results.allocationCost = lpResults.getObjective().intValue();
+		results.nodeForResult = cgNode;
 		
 		IBytecodeMethod bytecodeMethod = null;
 		String javaFileName = null;
@@ -68,14 +70,21 @@ public class CostComputerMemory implements ICostComputer<CostResultMemory> {
 
 		boolean isEntryPointCGNode = analysisSpecification.isEntryPointCGNode(cgNode);
 		
+		IMethod method = cgNode.getMethod();
 		if(isEntryPointCGNode) {
-			IMethod method = cgNode.getMethod();
 			bytecodeMethod = (IBytecodeMethod)method;
 			javaFileName = bytecodeMethod.getDeclaringClass().getSourceFileName();
 			cfg = cgNode.getIR().getControlFlowGraph();
 			
 			lines = new HashSet<Integer>();
 			sourceFilePath = FileScanner.getFullPath(javaFileName);
+		}
+		
+		/* Save node stack information */
+		if(method instanceof ShrikeBTMethod) {
+			ShrikeBTMethod shrikeMethod = (ShrikeBTMethod)method;
+			results.setMaxLocals(shrikeMethod.getMaxLocals());
+			results.setMaxStackHeight(shrikeMethod.getMaxStackHeight());		
 		}
 		
 		Collection<Object> allVariables = problem.getVariables();
@@ -103,28 +112,33 @@ public class CostComputerMemory implements ICostComputer<CostResultMemory> {
 					/* Types allocated in the node itself are counted here */
 					if (results.typeNameByNodeId.containsKey(blockDstID)) {
 						TypeName typeName = results.typeNameByNodeId.get(blockDstID);
-						if (results.countByTypename.containsKey(typeName)) {
+						if (results.countByTypename.containsKey(typeName) && results.aggregatedCountByTypename.containsKey(typeName)) {
 							int count = results.countByTypename.get(typeName);
 							count += lpResults.getPrimalValue(var).intValue();
 							results.countByTypename.put(typeName, count);
+							int countAggregated = results.aggregatedCountByTypename.get(typeName);
+							countAggregated += lpResults.getPrimalValue(var).intValue();
+							results.aggregatedCountByTypename.put(typeName, countAggregated);
 						}
 						else {
 							results.countByTypename.put(typeName, lpResults.getPrimalValue(var).intValue());
+							results.aggregatedCountByTypename.put(typeName, lpResults.getPrimalValue(var).intValue());
 						}
 					}
 					
 					/* Types allocated in callees are merged into the results here */
 					if (calleeResultsAtGraphNodeIdByResult.containsKey(blockDstID)) {
 						CostResultMemory memRes = (CostResultMemory)calleeResultsAtGraphNodeIdByResult.get(blockDstID);
-						for(Entry<TypeName, Integer> typeAllocatedInCallee : memRes.countByTypename.entrySet()) {
-							if (results.countByTypename.containsKey(typeAllocatedInCallee.getKey())) {
-								int count = results.countByTypename.get(typeAllocatedInCallee.getKey());
+						results.worstcaseReferencesMethods.add(memRes.nodeForResult);
+						for(Entry<TypeName, Integer> typeAllocatedInCallee : memRes.aggregatedCountByTypename.entrySet()) {
+							if (results.aggregatedCountByTypename.containsKey(typeAllocatedInCallee.getKey())) {
+								int count = results.aggregatedCountByTypename.get(typeAllocatedInCallee.getKey());
 								count += lpResults.getPrimalValue(var).intValue()*typeAllocatedInCallee.getValue();
-								results.countByTypename.put(typeAllocatedInCallee.getKey(), count);
+								results.aggregatedCountByTypename.put(typeAllocatedInCallee.getKey(), count);
 							}
 							else
 							{
-								results.countByTypename.put(typeAllocatedInCallee.getKey(), lpResults.getPrimalValue(var).intValue()*typeAllocatedInCallee.getValue());
+								results.aggregatedCountByTypename.put(typeAllocatedInCallee.getKey(), lpResults.getPrimalValue(var).intValue()*typeAllocatedInCallee.getValue());
 							}							
 						}
 					}

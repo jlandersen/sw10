@@ -25,14 +25,10 @@ public class ReportEntry {
 	/* Line numbers to highlight for each node */
 	private Map<CGNode, Set<Integer>> lineNumbersByEntry;
 	
-	/* Referenced nodes with their respective results for a given entry node */
-	private Map<CGNode, LinkedList<Map<CGNode, ICostResult>>> referencesByEntry;
-	
 	public ReportEntry() {
 		this.source = "";
 		this.costByEntry = new HashMap<CGNode, ICostResult>();
 		this.lineNumbersByEntry = new HashMap<CGNode, Set<Integer>>();
-		this.referencesByEntry = new HashMap<CGNode, LinkedList<Map<CGNode,ICostResult>>>();
 	}
 	
 	public String getSource() {

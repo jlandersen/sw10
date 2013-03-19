@@ -15,10 +15,12 @@ public class AnalysisResults {
 	private Map<CGNode, ICostResult> nodesProcessed;
 	private ArrayList<ReportEntry> reportEntries;
 	private AnalysisSpecification analysisSpecification;
+	private Map<CGNode, CGNode> worstCaseStackTraceNextNodeInStackByNode;
 
 	private AnalysisResults() {
 		this.nodesProcessed = new HashMap<CGNode, ICostResult>();
 		this.reportEntries = new ArrayList<ReportEntry>();
+		this.worstCaseStackTraceNextNodeInStackByNode = new HashMap<CGNode, CGNode>();
 		this.analysisSpecification = AnalysisSpecification.getAnalysisSpecification(); 
 	}
 	
@@ -37,12 +39,33 @@ public class AnalysisResults {
 		return this.nodesProcessed.get(node);
 	}
 	
+	public Map<CGNode, ICostResult> getNodesProcessed() {
+		return nodesProcessed;
+	}
+	
 	public boolean isNodeProcessed(CGNode node) {
 		return nodesProcessed.containsKey(node);
 	}
 	
 	public ArrayList<ReportEntry> getReportEntries() {
 		return reportEntries;
+	}
+	
+	public void setNextWorstCaseCallInStack(CGNode caller, CGNode callee) {
+		this.worstCaseStackTraceNextNodeInStackByNode.put(caller, callee);
+	}
+	
+	public ArrayList<CGNode> getWorstCaseStackTraceFromNode(CGNode node) {
+		ArrayList<CGNode> trace = new ArrayList<CGNode>();
+		CGNode currentNode = node;
+		while(worstCaseStackTraceNextNodeInStackByNode.containsKey(currentNode)) {
+			trace.add(currentNode);
+			currentNode = worstCaseStackTraceNextNodeInStackByNode.get(currentNode);
+		}
+		
+		trace.add(currentNode);
+		
+		return trace;
 	}
 	
 	public void addReportData(final String sourceFilePath, final Set<Integer> lines, final CGNode cgNode, final ICostResult cost) {

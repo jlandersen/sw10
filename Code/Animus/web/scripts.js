@@ -4,6 +4,7 @@ $(function() {
   var menuActive = $('#menuSummary');
   var divActive = $('#summary'); 
   var activeLiElement = $('#methods li').first(); // add or remove "active" class
+  var activeRefDiv = null;
   
   /* Menus */
   var menuSummary = $('#menuSummary');
@@ -54,6 +55,7 @@ $(function() {
       });
     }
     divActive.css('display', 'none'); // hide active div
+
     menuActive.removeClass('active');
     
     div.css('display', 'block');
@@ -96,6 +98,28 @@ $(function() {
         $('#' + element.id).css('display', 'none');
       }
     });
+  });
+
+  $('#methods').on('click', "li a[id|='methodref']", function(event) {
+     $("div[id|='code']").css('display', 'none');
+     if(activeRefDiv != null)
+        activeRefDiv.css('display', 'none');
+     
+     var anchor = event.currentTarget;
+     var anchorId = event.currentTarget.id;
+     var anchorJquery = $('#' + anchorId);
+     var anchorLiElement = anchorJquery.parent();
+
+     activeLiElement.removeClass('active');
+     anchorLiElement.addClass('active');
+     activeLiElement = anchorLiElement;
+
+     var num = anchorId.substring(10) // xxxxxx-xxxxx (GUID)
+     var refId = 'ref-' + num;
+     var refDiv = $('#' + refId);
+
+     refDiv.css('display', 'block');
+     activeRefDiv = refDiv;
   });
 
   $('#btnSummary').trigger('click');

@@ -1,6 +1,7 @@
 package sw10.animus.analysis;
 
 import java.util.Map;
+import java.util.Set;
 
 import net.sf.javailp.Problem;
 import net.sf.javailp.Result;
