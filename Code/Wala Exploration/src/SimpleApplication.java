@@ -28,7 +28,34 @@ public class SimpleApplication {
 			return new TrivialObject();
 	}
 	
+	public static void doWhile() {
+		int x = 0;
+		do { //@ loopbound = 5
+			int y = 0;
+			goodbye(5);
+			Object n = new Object();
+			int z = 2;
+			x++;
+		} while (x < 5);
+	}
+	
+	public static void whileLoop() {
+		int x = 0;
+		while(x < 5) { //@ loopbound = 5
+			goodbye(5);
+			x++;
+		}
+	}
+	
+	public static void forLoop() {
+		for(int x = 0; x < 5; x++) { //@ loopbound = 5
+			goodbye(5);
+			int y = 0;
+		}
+	}
+	
 	public static void main(String[] args) {
+		int[] array = new int[5];
 		Object obj = goodbye(5);
 		String str = obj.toString();
 		int x = 2;

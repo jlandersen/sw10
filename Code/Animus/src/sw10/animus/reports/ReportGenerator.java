@@ -137,8 +137,11 @@ public class ReportGenerator {
 		
 		BufferedReader fileJavaReader;
 		
-		StringBuilder sidemenu = new StringBuilder();
+		StringBuilder sidemenuAllocations = new StringBuilder();
+		StringBuilder sidemenuJVMStack = new StringBuilder();
 		StringBuilder code = new StringBuilder();
+		StringBuilder jvmStack = new StringBuilder();
+		
 		StringBuilder lines;
 		
 		for(ReportEntry reportEntry : reportEntries) {
@@ -152,7 +155,6 @@ public class ReportGenerator {
 					packages = "default";
 								
 				IMethod method = cgNode.getMethod();
-				String methodName = method.getName().toString();
 				String guid = java.util.UUID.randomUUID().toString();
 				
 				CostResultMemory memCost = (CostResultMemory)cost;
@@ -165,21 +167,26 @@ public class ReportGenerator {
 					continue;
 				}
 				
-				/* Method */
-				sidemenu.append("<li><a id=\"method-" + guid + "\" href=\"#\"><i class=\"icon-home icon-black\"></i>" + methodName + "</a></li>\n");
+				/* JVMStack side menu */
+				sidemenuJVMStack.append("<li><a id=\"methodjvm-" + guid + "\" href=\"#\"><i class=\"icon-home icon-black\"></i>" + method.getSignature() + "</a></li>\n");
+				sidemenuJVMStack.append("<ul class=\"nav nav-list\">");
+				sidemenuJVMStack.append("<li><i class=\"icon-certificate icon-black\"></i>Cost: " + memCost.getAccumStackCost() + "</li>\n");
+				sidemenuJVMStack.append("</ul>");
+				
+				/* Allocations side menu */
+				sidemenuAllocations.append("<li><a id=\"method-" + guid + "\" href=\"#\"><i class=\"icon-home icon-black\"></i>" + method.getSignature() + "</a></li>\n");
 				
 				/* Sub-menu level 1  */
-				sidemenu.append("<ul class=\"nav nav-list\">");
-				sidemenu.append("<li><i class=\"icon-certificate icon-black\"></i>Cost: " + cost.getCostScalar() + "</li>\n");
-				sidemenu.append("<li><i class=\"icon-file icon-black\"></i>Package: " + packages + "</li>\n");
-				String className = method.getDeclaringClass().getName().toString();
-				sidemenu.append("<li><i class=\"icon-file icon-black\"></i>Class:   " + className + "</li>\n");	
+				sidemenuAllocations.append("<ul class=\"nav nav-list\">");
+				sidemenuAllocations.append("<li><i class=\"icon-certificate icon-black\"></i>Cost: " + cost.getCostScalar() + "</li>\n");
 				String href = PDF_DIR + File.separatorChar + guid + ".pdf";
-				sidemenu.append("<li><a data-fancybox-type=\"iframe\" class=\"cfgViewer\" href=\"" + href + "\"><i class=\"icon-refresh icon-black\"></i>Control-Flow Graph</a></li>\n");
+				sidemenuAllocations.append("<li><a data-fancybox-type=\"iframe\" class=\"cfgViewer\" href=\"" + href + "\"><i class=\"icon-refresh icon-black\"></i>Control-Flow Graph</a></li>\n");
 				href = guid;
-				sidemenu.append("<li><a id=\"referencedMethods-" + guid + "\" href=\"#\"><i class=\"icon-align-justify icon-black\"></i>Referenced Methods</a></li>\n");
 				
-				sidemenu.append("<ul id=\"methodrefsub-" + guid + "\" class=\"nav nav-list\" style=\"display:none;\">");
+				sidemenuAllocations.append("<li><a id=\"details-" + guid + "\" href=\"#\"><i class=\"icon-search icon-black\"></i>Details</a></li>\n");
+				sidemenuAllocations.append("<li><a id=\"referencedMethods-" + guid + "\" href=\"#\"><i class=\"icon-align-justify icon-black\"></i>Referenced Methods</a></li>\n");
+				sidemenuAllocations.append("<ul id=\"methodrefsub-" + guid + "\" class=\"nav nav-list\" style=\"display:none;\">");
+				
 				Map<CGNode, String> guidByRefMethod = new HashMap<CGNode, String>();
 				for(CGNode refCGNode : memCost.worstcaseReferencesMethods) {
 					IMethod refMethod = refCGNode.getMethod();
@@ -190,14 +197,13 @@ public class ReportGenerator {
 					}
 					
 					String refMethodGuid = java.util.UUID.randomUUID().toString();
-					sidemenu.append("<li><a id=\"methodrefsubentry-" + refMethodGuid + "\" href=\"#\"><i class=\"icon-arrow-right icon-black\"></i>" + refMethodSignature + "</a></li>\n");
+					sidemenuAllocations.append("<li><a id=\"methodrefsubentry-" + refMethodGuid + "\" href=\"#\"><i class=\"icon-arrow-right icon-black\"></i>" + refMethodSignature + "</a></li>\n");
 					guidByRefMethod.put(refCGNode, refMethodGuid);
 				}	
 				
-				sidemenu.append("</ul>\n");
-				
-				sidemenu.append("</ul>\n");
-				
+				sidemenuAllocations.append("</ul>\n");
+				sidemenuAllocations.append("</ul>\n");
+
 				lines = new StringBuilder();
 				Iterator<Integer> linesIterator = lineNumbers.iterator();
 				while(linesIterator.hasNext()) {
@@ -216,12 +222,88 @@ public class ReportGenerator {
 		        while ((line = fileJavaReader.readLine()) != null) {
 		        	code.append(line + "\n");
 		        }
+		        
 		        code.append("</pre>");
+				code.append("</div>");
+				
+				/* Stack div */
+				ArrayList<CGNode> callStack = AnalysisResults.getAnalysisResults().getWorstCaseStackTraceFromNode(cgNode);
+				jvmStack.append("<div id=\"stack-" + guid + "\" style=\"display:none; width:80%;\">");
+				for(CGNode stackElement : callStack) {
+					IMethod stackElementImethod = stackElement.getMethod();
+					String stackGuid = java.util.UUID.randomUUID().toString();
+					CostResultMemory stackElementCost = (CostResultMemory)AnalysisResults.getAnalysisResults().getResultsForNode(stackElement);
+					int locals = stackElementCost.getMaxLocals();
+					int stack = stackElementCost.getMaxStackHeight();
+					
+					StringBuilder content = new StringBuilder();
+					content.append("<small>Max Locals:       " + locals + "</small><br/>");
+					content.append("<small>Max Stack height: " + stack + "</small>");
+					
+					jvmStack.append("<a style=\"text-decoration:none;\" href=\"#\" data-html=\"true\" data-trigger=\"manual\" id=\"stackelement-" + stackGuid + "\" rel=\"popover\" data-content=\"" + content + "\" data-original-title=\"Accumulated: " + stackElementCost.getAccumStackCost() + "\">");
+					jvmStack.append("<button style=\"height:130px;\" class=\"btn btn-large btn-block\">" + stackElement.getMethod().getSignature() + "</button>");
+					jvmStack.append("</a>");
+				}
+				
+				jvmStack.append("</div>");
+				
+				/* Details div */
+				code.append("<div id=\"det-" + guid + "\" style=\"display:none;\">\n");
+				code.append("<h3>" + method.getSignature() + "</h3>");
+				code.append("<span class=\"label label-info\">Cost: " + memCost.getCostScalar() + "</span>");
+				
+				if(memCost.countByTypename.size() > 0) {
+					/* Allocations table (self) */
+					code.append("<br/><br/><div class=\"desc\">Allocation table for the method itself</div>");
+					code.append("<table class=\"table table-striped table-bordered table-hover\">");
+					code.append("<tbody>");
+					code.append("<tr>");
+					code.append("<td width=\"60%\"><b>Typename</b></td>");
+					code.append("<td width=\"20%\"><b>Count</b></td>");
+					code.append("<td width=\"20%\"><b>Cost</b></td>");
+					code.append("</tr>");
+					for(Entry<TypeName, Integer> countByTypename : memCost.countByTypename.entrySet()) {
+						code.append("<tr>");
+						TypeName typeName = countByTypename.getKey();
+						code.append("<td>" + typeName + "</td>");
+						int count = countByTypename.getValue();
+						code.append("<td>" + count + "</td>");
+						int typeSize = jvmModel.getSizeForQualifiedType(typeName);
+						code.append("<td>" + count*typeSize + "</td>");
+						code.append("</tr>");
+					}
+					code.append("</tbody>");
+					code.append("</table>");
+				}
+				
+				if(memCost.aggregatedCountByTypename.size() > 0) {
+					/* Allocations table (aggr) */
+					code.append("<div class=\"desc\">Aggregrated allocation table for all referenced methods and the method itself</div>");
+					code.append("<table class=\"table table-striped table-bordered table-hover\">");
+					code.append("<tbody>");
+					code.append("<tr>");
+					code.append("<td width=\"60%\"><b>Typename</b></td>");
+					code.append("<td width=\"20%\"><b>Count</b></td>");
+					code.append("<td width=\"20%\"><b>Cost</b></td>");
+					code.append("</tr>");
+					for(Entry<TypeName, Integer> countByTypename : memCost.aggregatedCountByTypename.entrySet()) {
+						code.append("<tr>");
+						TypeName typeName = countByTypename.getKey();
+						code.append("<td>" + typeName + "</td>");
+						int count = countByTypename.getValue();
+						code.append("<td>" + count + "</td>");
+						int typeSize = jvmModel.getSizeForQualifiedType(typeName);
+						code.append("<td>" + count*typeSize + "</td>");
+						code.append("</tr>");
+					}
+					code.append("</tbody>");
+					code.append("</table>");
+				}
+				
 				code.append("</div>");
 				
 				/* Referenced Method div */
 				code.append("<div id=\"ref-" + guid + "\" style=\"display:none;\">\n");
-				code.append("<h2>Referenced Methods</h2><br/>");
 				for(CGNode refCGNode : memCost.worstcaseReferencesMethods) {	
 					IMethod refMethod = refCGNode.getMethod();
 					String refMethodSignature = refMethod.getSignature();
@@ -230,43 +312,43 @@ public class ReportGenerator {
 						refMethodSignature = refMethodSignature.replace(">", "&gt;");
 					}
 					
-					code.append("<p class=\"lead\">" + refMethodSignature + "</p>");
-					
+					code.append("<h3>" + refMethodSignature + "</h3>");
 					CostResultMemory refCGNodeCost = (CostResultMemory)analysisResults.getResultsForNode(refCGNode);
-					//code.append("COST : " + refCGNodeCost.getCostScalar() + "<br/>");
-					int totalCost = 0;
-					if(refCGNodeCost.countByTypename.size() > 0) {
-						/* Allocations table */
-						code.append("<p>Allocation Table:</p>");
-						code.append("<table class=\"table table-striped table-bordered\">");
+					code.append("<span class=\"label label-info\">Cost: " + refCGNodeCost.getCostScalar() + "</span>");
+					
+					if(refCGNodeCost.aggregatedCountByTypename.size() > 0) {
+						/* Allocations table (aggr) */
+						code.append("<div class=\"desc\">Aggregrated allocation table for all referenced methods and the method itself</div>");
+						code.append("<table class=\"table table-striped table-bordered table-hover\">");
 						code.append("<tbody>");
 						code.append("<tr>");
-						code.append("<td>Typename</td>");
-						code.append("<td>Count</td>");
-						code.append("<td>Cost</td>");
+						code.append("<td width=\"60%\"><b>Typename</b></td>");
+						code.append("<td width=\"20%\"><b>Count</b></td>");
+						code.append("<td width=\"20%\"><b>Cost</b></td>");
 						code.append("</tr>");
-						for(Entry<TypeName, Integer> countByTypename : refCGNodeCost.countByTypename.entrySet()) {
+						for(Entry<TypeName, Integer> countByTypename : memCost.aggregatedCountByTypename.entrySet()) {
 							code.append("<tr>");
 							TypeName typeName = countByTypename.getKey();
 							code.append("<td>" + typeName + "</td>");
 							int count = countByTypename.getValue();
 							code.append("<td>" + count + "</td>");
 							int typeSize = jvmModel.getSizeForQualifiedType(typeName);
-							int costCalc = count*typeSize;
-							code.append("<td>" + costCalc + "</td>");
+							code.append("<td>" + count*typeSize + "</td>");
 							code.append("</tr>");
-							totalCost += costCalc;
 						}
+						code.append("</tbody>");
+						code.append("</table>");
 					}
 					code.append("</tbody>");
 					code.append("</table>");
-					code.append("<p>Total cost:" + totalCost + "</p>");
 				}
 				code.append("</div>");
 			}
 		}
-		ctx.put("sidemenu", sidemenu.toString());
+		ctx.put("sidemenuAllocations", sidemenuAllocations.toString());
+		ctx.put("sidemenuJVMStack", sidemenuJVMStack.toString());
 		ctx.put("code", code.toString());
+		ctx.put("JVMStack", jvmStack.toString());
 	}
 	
 	private void GenerateCFG(SSACFG cfg, String guid) throws WalaException{
