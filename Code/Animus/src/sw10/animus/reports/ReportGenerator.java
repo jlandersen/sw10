@@ -8,6 +8,7 @@ import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
@@ -21,6 +22,7 @@ import sw10.animus.analysis.AnalysisResults;
 import sw10.animus.analysis.CostResultMemory;
 import sw10.animus.analysis.ICostResult;
 import sw10.animus.build.AnalysisEnvironment;
+import sw10.animus.build.JVMModel;
 import sw10.animus.program.AnalysisSpecification;
 
 import com.ibm.wala.classLoader.IMethod;
@@ -43,6 +45,7 @@ public class ReportGenerator {
 	private AnalysisSpecification specification;
 	private AnalysisEnvironment environment;
 	private AnalysisResults analysisResults;
+	private JVMModel jvmModel;
 	
 	private final String RESOURCES = "resources";
 	private final String DT = "dt";
@@ -59,6 +62,7 @@ public class ReportGenerator {
 		this.specification = AnalysisSpecification.getAnalysisSpecification();
 		this.environment = AnalysisEnvironment.getAnalysisEnvironment();
 		this.analysisResults = AnalysisResults.getAnalysisResults();
+		this.jvmModel = specification.getJvmModel();
 		
 		String outputDir = specification.getOutputDir();
 		this.OUTPUT_DIR = outputDir;
@@ -164,7 +168,7 @@ public class ReportGenerator {
 				/* Method */
 				sidemenu.append("<li><a id=\"method-" + guid + "\" href=\"#\"><i class=\"icon-home icon-black\"></i>" + methodName + "</a></li>\n");
 				
-				/* Sub-menu */
+				/* Sub-menu level 1  */
 				sidemenu.append("<ul class=\"nav nav-list\">");
 				sidemenu.append("<li><i class=\"icon-certificate icon-black\"></i>Cost: " + cost.getCostScalar() + "</li>\n");
 				sidemenu.append("<li><i class=\"icon-file icon-black\"></i>Package: " + packages + "</li>\n");
@@ -173,7 +177,25 @@ public class ReportGenerator {
 				String href = PDF_DIR + File.separatorChar + guid + ".pdf";
 				sidemenu.append("<li><a data-fancybox-type=\"iframe\" class=\"cfgViewer\" href=\"" + href + "\"><i class=\"icon-refresh icon-black\"></i>Control-Flow Graph</a></li>\n");
 				href = guid;
-				sidemenu.append("<li><a id=\"methodref-" + guid + "\" href=\"#\"><i class=\"icon-align-justify icon-black\"></i>Referenced Methods</a></li>\n");
+				sidemenu.append("<li><a id=\"referencedMethods-" + guid + "\" href=\"#\"><i class=\"icon-align-justify icon-black\"></i>Referenced Methods</a></li>\n");
+				
+				sidemenu.append("<ul id=\"methodrefsub-" + guid + "\" class=\"nav nav-list\" style=\"display:none;\">");
+				Map<CGNode, String> guidByRefMethod = new HashMap<CGNode, String>();
+				for(CGNode refCGNode : memCost.worstcaseReferencesMethods) {
+					IMethod refMethod = refCGNode.getMethod();
+					String refMethodSignature = refMethod.getSignature();
+					if(refMethodSignature.contains("<")) {
+						refMethodSignature = refMethodSignature.replace("<", "&lt;");
+						refMethodSignature = refMethodSignature.replace(">", "&gt;");
+					}
+					
+					String refMethodGuid = java.util.UUID.randomUUID().toString();
+					sidemenu.append("<li><a id=\"methodrefsubentry-" + refMethodGuid + "\" href=\"#\"><i class=\"icon-arrow-right icon-black\"></i>" + refMethodSignature + "</a></li>\n");
+					guidByRefMethod.put(refCGNode, refMethodGuid);
+				}	
+				
+				sidemenu.append("</ul>\n");
+				
 				sidemenu.append("</ul>\n");
 				
 				lines = new StringBuilder();
@@ -197,20 +219,50 @@ public class ReportGenerator {
 		        code.append("</pre>");
 				code.append("</div>");
 				
-				/* Referenced Methods div */
+				/* Referenced Method div */
 				code.append("<div id=\"ref-" + guid + "\" style=\"display:none;\">\n");
-				for(CGNode refCGNode : memCost.worstcaseReferencesMethods) {
+				code.append("<h2>Referenced Methods</h2><br/>");
+				for(CGNode refCGNode : memCost.worstcaseReferencesMethods) {	
 					IMethod refMethod = refCGNode.getMethod();
-					String refMethodName = refMethod.getName().toString();
-					code.append("REF : " + refMethodName + "<br/>");
-					CostResultMemory refCGNodeCost = (CostResultMemory)analysisResults.getResultsForNode(refCGNode);
-					code.append("COST : " + refCGNodeCost.getCostScalar() + "<br/>");
-					for(Entry<TypeName, Integer> countByTypename : refCGNodeCost.countByTypename.entrySet()) {
-						code.append("Type " + countByTypename.getKey().toString() + " count " + countByTypename.getValue() + "<br/>");
+					String refMethodSignature = refMethod.getSignature();
+					if(refMethodSignature.contains("<")) {
+						refMethodSignature = refMethodSignature.replace("<", "&lt;");
+						refMethodSignature = refMethodSignature.replace(">", "&gt;");
 					}
 					
+					code.append("<p class=\"lead\">" + refMethodSignature + "</p>");
+					
+					CostResultMemory refCGNodeCost = (CostResultMemory)analysisResults.getResultsForNode(refCGNode);
+					//code.append("COST : " + refCGNodeCost.getCostScalar() + "<br/>");
+					int totalCost = 0;
+					if(refCGNodeCost.countByTypename.size() > 0) {
+						/* Allocations table */
+						code.append("<p>Allocation Table:</p>");
+						code.append("<table class=\"table table-striped table-bordered\">");
+						code.append("<tbody>");
+						code.append("<tr>");
+						code.append("<td>Typename</td>");
+						code.append("<td>Count</td>");
+						code.append("<td>Cost</td>");
+						code.append("</tr>");
+						for(Entry<TypeName, Integer> countByTypename : refCGNodeCost.countByTypename.entrySet()) {
+							code.append("<tr>");
+							TypeName typeName = countByTypename.getKey();
+							code.append("<td>" + typeName + "</td>");
+							int count = countByTypename.getValue();
+							code.append("<td>" + count + "</td>");
+							int typeSize = jvmModel.getSizeForQualifiedType(typeName);
+							int costCalc = count*typeSize;
+							code.append("<td>" + costCalc + "</td>");
+							code.append("</tr>");
+							totalCost += costCalc;
+						}
+					}
+					code.append("</tbody>");
+					code.append("</table>");
+					code.append("<p>Total cost:" + totalCost + "</p>");
 				}
-				code.append("</div>");		
+				code.append("</div>");
 			}
 		}
 		ctx.put("sidemenu", sidemenu.toString());
@@ -290,6 +342,19 @@ public class ReportGenerator {
 				System.err.println("Could not create output directories");
 				e.printStackTrace();
 			}
+		} else {	
+		    File dtDir = new File(DT_DIR);
+		    File pdfDir = new File(PDF_DIR);
+		    
+		    File[] files = dtDir.listFiles();
+		    for(File file : files) {
+		    	file.delete();
+		    }
+		    files = pdfDir.listFiles();
+		    for(File file : files) {
+		    	file.delete();
+		    }
+		    
 		}
 	}
 }

@@ -3,8 +3,9 @@ $(function() {
   /* Active items */
   var menuActive = $('#menuSummary');
   var divActive = $('#summary'); 
-  var activeLiElement = $('#methods li').first(); // add or remove "active" class
-  var activeRefDiv = null;
+  var activeLiElement = $('#methods li').first(); // add or remove "active" class (submenu element)
+  var activeRefDiv = null; // div holding all referenced methods with tables etc
+  var activeRefSubMenu = null; // sub menu holding a list of all referenced methods
   
   /* Menus */
   var menuSummary = $('#menuSummary');
@@ -55,6 +56,9 @@ $(function() {
       });
     }
     divActive.css('display', 'none'); // hide active div
+    if(activeRefSubMenu != null) {
+      activeRefSubMenu.css('display', 'none');
+    }
 
     menuActive.removeClass('active');
     
@@ -65,6 +69,15 @@ $(function() {
     divActive = div;
     divContent.animate({'height': height}, 250);
   };
+
+  toggleSubmenu = function(anchorId) {
+     var anchorJquery = $('#' + anchorId);
+     var methodLiElement = anchorJquery.parent();
+
+     activeLiElement.removeClass('active');
+     methodLiElement.addClass('active');
+     activeLiElement = methodLiElement;
+  }
 
   /* CFG Viewer */  
   $(".cfgViewer").fancybox({
@@ -77,19 +90,31 @@ $(function() {
     closeEffect : 'elastic'
   });
 
+  /* BEGIN: Toggle DOM elements */
+  hideCodeBoxes_Content = function() {
+    $("div[id|='code']").css('display', 'none');
+  }
+
+  hideReferencedMethods_Content = function() {
+    if(activeRefDiv != null)
+      activeRefDiv.css('display', 'none');
+  }
+
+  hideReferencedMethods_Submenu = function() {
+    if(activeRefSubMenu != null)
+       activeRefSubMenu.css('display', 'none');
+  }
+  /* End: Toggle DOM elements */
+
+  /* BEGIN: Submenu handlers */
   $('#methods').on('click', "li a[id|='method']", function(event) {
-    var method = event.currentTarget; // DOM element (anchor)
-    var methodId = event.currentTarget.id // "method-x"
-    var methodJquery = $('#' + methodId); // Jquery object
-    var methodLiElement = methodJquery.parent();
+    hideReferencedMethods_Content();
 
-    /* Switch between actives */
-    activeLiElement.removeClass('active');
-    methodLiElement.addClass('active');
-    activeLiElement = methodLiElement;
+    var anchorId = event.currentTarget.id;
+    toggleSubmenu(anchorId);
+    var num = anchorId.substring(7);
 
-    var num = methodId.substring(7) // xxxxxx-xxxxx (GUID)
-
+    // SyntaxHighlighter functionality
     var codeId = 'code-' + num;
     $('#' + codeId).css('display', 'block');
     SyntaxHighlighter.highlight(); 
@@ -100,27 +125,28 @@ $(function() {
     });
   });
 
-  $('#methods').on('click', "li a[id|='methodref']", function(event) {
-     $("div[id|='code']").css('display', 'none');
-     if(activeRefDiv != null)
-        activeRefDiv.css('display', 'none');
-     
-     var anchor = event.currentTarget;
+  $('#methods').on('click', "li a[id|='referencedMethods']", function(event) {  
+     hideCodeBoxes_Content();
+     hideReferencedMethods_Content();
+     hideReferencedMethods_Submenu();
+
      var anchorId = event.currentTarget.id;
-     var anchorJquery = $('#' + anchorId);
-     var anchorLiElement = anchorJquery.parent();
+     toggleSubmenu(anchorId);
+     var num = anchorId.substring(18);
 
-     activeLiElement.removeClass('active');
-     anchorLiElement.addClass('active');
-     activeLiElement = anchorLiElement;
-
-     var num = anchorId.substring(10) // xxxxxx-xxxxx (GUID)
      var refId = 'ref-' + num;
      var refDiv = $('#' + refId);
 
+     activeRefSubMenu = $('#methodrefsub-' + num);
+     $('#methodrefsub-' + num).css('display','block');
      refDiv.css('display', 'block');
      activeRefDiv = refDiv;
   });
+
+  $('#methods').on('click', "li a[id|='methodrefsubentry']", function(event) {
+    
+  });
+  /* END: Submenu handlers */
 
   $('#btnSummary').trigger('click');
 });
