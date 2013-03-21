@@ -36,16 +36,24 @@
             <ul class="nav">
               <li id="menuSummary" class="active"><a href="#" id="btnSummary">Summary</a></li>
               <li id="menuCallgraph"><a href="#" id="btnCallgraph">Callgraph</a></li>
-              <li id="menuDetails"><a href="#" id="btnDetails">Details</a></li>
+              <li id="menuAllocations"><a href="#" id="btnAllocations">Allocations</a></li>
+              <li id="menuJVMStack"><a href="#" id="btnJVMStack">JVM stack</a></li>
             </ul>
           </div>
         </div>
       </div>
-      <!-- Sidemenu -->
-      <div class="hero-unit2" id="sidemenu"> 
+      <!-- Sidemenu allocations -->
+      <div class="hero-unit2" id="sidemenuAllocations"> 
         Analyzed Methods
-        <ul class="nav nav-list" id="methods">
-          $sidemenu
+        <ul class="nav nav-list" id="methodsAllocations">
+          $sidemenuAllocations
+        </ul>
+      </div>
+      <!-- Sidemenu JVMStack -->
+      <div class="hero-unit2" id="sidemenuJVMStack"> 
+        Analyzed Methods
+        <ul class="nav nav-list" id="methodsJVMStack">
+          $sidemenuJVMStack
         </ul>
       </div>
       <!-- Content -->
@@ -69,9 +77,8 @@
       		</table>
         </div>
         <div id="callgraph">$callgraph</div>
-        <div id="details">
-        	$code
-        </div>
+        <div id="allocations">$code</div>
+        <div id="JVMStack">$JVMStack</div>
       </div>
       <!-- Footer -->
       <hr>

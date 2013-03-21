@@ -11,7 +11,8 @@ p {
 	overflow: scroll;
 }
 
-#sidemenu {
+#sidemenuAllocations,
+#sidemenuJVMStack {
 	position: absolute; 
 	float: left;
 	left: 0px;
@@ -20,11 +21,40 @@ p {
 	white-space: nowrap;
 }
 
+small {
+	margin: 0px;
+	padding: 0px;
+}
+
 pre {
 	display:none;
+}
+
+h3 {
+	margin:0px;
+	padding: 0px;
+}
+
+.topRight {
+	position: absolute;
+	top:0;
+	right:0;
+	width:120px;
 }
 
 #summary,
 #callgraph {
 	display:none;
+}
+
+.desc {
+  color: #c09853;
+  padding: 8px 35px 8px 14px;
+  margin-top:10px;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
+  background-color: #fcf8e3;
+  border: 1px solid #fbeed5;
+  -webkit-border-radius: 4px;
+     -moz-border-radius: 4px;
+          border-radius: 4px;
 }

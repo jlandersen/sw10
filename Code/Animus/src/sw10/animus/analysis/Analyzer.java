@@ -80,7 +80,6 @@ public class Analyzer {
 		LinkedList<CGNode> entryCGNodes = specification.getEntryPointCGNodes();	
 
 		AnalysisEnvironment env = AnalysisEnvironment.getAnalysisEnvironment();
-		CallGraph cg = env.getCallGraph();
 		for(CGNode entryNode : entryCGNodes) {
 			ICostResult results = analyzeNode(entryNode);
 			CostResultMemory memRes = (CostResultMemory)results;				
@@ -95,12 +94,7 @@ public class Analyzer {
 		ReportGenerator gen = new ReportGenerator();
 		gen.Generate(AnalysisResults.getAnalysisResults().getReportEntries());
 	}
-
-	private void analyzeStacks() {
-		CallGraph cg = environment.getCallGraph();
-		
-	}
-
+	
 	public ICostResult analyzeNode(CGNode cgNode) {
 		if (results.isNodeProcessed(cgNode)) {
 			return results.getResultsForNode(cgNode);
@@ -108,21 +102,19 @@ public class Analyzer {
 		
 		IMethod method = cgNode.getMethod();
 		IR ir = cgNode.getIR();
-		
+
 		Pair<SlowSparseNumberedLabeledGraph<ISSABasicBlock, String>, Map<String, Pair<Integer, Integer>>> sanitized = null;
 		try {
 			sanitized = Util.sanitize(ir, environment.getClassHierarchy());
 		} catch (IllegalArgumentException e) {
-			
-		} catch (WalaException e) {
-			
+		} catch (WalaException e) {			
 		}
 		SlowSparseNumberedLabeledGraph<ISSABasicBlock, String> cfg = sanitized.fst;
 		Map<String, Pair<Integer, Integer>> edgeLabelToNodesIDs = sanitized.snd;
 
 		Map<Integer, Annotation> annotationByLineNumber = getAnnotations(method);
 		Map<Integer, ArrayList<Integer>> loopBlocksByHeaderBlockId = getLoops(cfg, ir.getControlFlowGraph().entry());
-
+		
 		/* LPSolver */
 		SolverFactory factory = new SolverFactoryLpSolve();
 		factory.setParameter(Solver.VERBOSE, 0);
@@ -253,10 +245,19 @@ public class Analyzer {
 					try {
 						IBytecodeMethod bytecodeMethod = (IBytecodeMethod)cgNode.getMethod();
 						lineNumberForLoop = bytecodeMethod.getLineNumber(bytecodeMethod.getBytecodeIndex(currentBlock.getFirstInstructionIndex()));
-						if (annotationByLineNumber == null || !annotationByLineNumber.containsKey(lineNumberForLoop)) {
+						if (annotationByLineNumber == null || (!annotationByLineNumber.containsKey(lineNumberForLoop) && !annotationByLineNumber.containsKey(lineNumberForLoop - 1))) {
 							System.err.println("No bound for loop detected in " + method.getName());
+							System.err.println("\tExpected //@ loopbound annotation at line " + lineNumberForLoop);
+							boundForLoop = "0";
 						} else {
-							boundForLoop = annotationByLineNumber.get(lineNumberForLoop).getAnnotationValue();
+							if (annotationByLineNumber.containsKey(lineNumberForLoop)) {
+								boundForLoop = annotationByLineNumber.get(lineNumberForLoop).getAnnotationValue();	
+							}
+							// do-while loops begins semantically at the first statement in the body
+							else if (annotationByLineNumber.containsKey(lineNumberForLoop - 1)) {
+								boundForLoop = annotationByLineNumber.get(lineNumberForLoop - 1).getAnnotationValue();
+							}
+							
 						}
 					} catch (InvalidClassFileException e) {
 					}    	
@@ -267,7 +268,7 @@ public class Analyzer {
 							break;
 						}
 					}
-
+					
 					IntIterator ancestorGraphIds = loopHeaderAncestors.intIterator();
 					while (ancestorGraphIds.hasNext()) {
 						int ancestorID = ancestorGraphIds.next();
