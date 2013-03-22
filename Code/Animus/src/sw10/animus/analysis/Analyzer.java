@@ -64,7 +64,7 @@ public class Analyzer {
 	private Analyzer() {
 		this.environment = AnalysisEnvironment.getAnalysisEnvironment();
 		this.specification = AnalysisSpecification.getAnalysisSpecification();
-		this.extractor = new AnnotationExtractor();		
+		this.extractor = AnnotationExtractor.getAnnotationExtractor();		
 		this.results = AnalysisResults.getAnalysisResults();
 		this.stackAnalyzer = new StackAnalyzer();
 	}
@@ -112,7 +112,7 @@ public class Analyzer {
 		SlowSparseNumberedLabeledGraph<ISSABasicBlock, String> cfg = sanitized.fst;
 		Map<String, Pair<Integer, Integer>> edgeLabelToNodesIDs = sanitized.snd;
 
-		Map<Integer, Annotation> annotationByLineNumber = getAnnotations(method);
+		Map<Integer, Annotation> annotationByLineNumber = extractor.getAnnotations(method);
 		Map<Integer, ArrayList<Integer>> loopBlocksByHeaderBlockId = getLoops(cfg, ir.getControlFlowGraph().entry());
 		
 		/* LPSolver */
@@ -246,7 +246,7 @@ public class Analyzer {
 						IBytecodeMethod bytecodeMethod = (IBytecodeMethod)cgNode.getMethod();
 						lineNumberForLoop = bytecodeMethod.getLineNumber(bytecodeMethod.getBytecodeIndex(currentBlock.getFirstInstructionIndex()));
 						if (annotationByLineNumber == null || (!annotationByLineNumber.containsKey(lineNumberForLoop) && !annotationByLineNumber.containsKey(lineNumberForLoop - 1))) {
-							System.err.println("No bound for loop detected in " + method.getName());
+							System.err.println("No bound for loop detected in " + method.getSignature());
 							System.err.println("\tExpected //@ loopbound annotation at line " + lineNumberForLoop);
 							boundForLoop = "0";
 						} else {
@@ -355,25 +355,5 @@ public class Analyzer {
 		loopAnalyzer.runDfsOrdering(entry);
 
 		return loopAnalyzer.getLoopHeaderBasicBlocksGraphIds();
-	}
-
-	private Map<Integer, Annotation> getAnnotations(IMethod method) {
-		IClass declaringClass = method.getDeclaringClass();
-		String packageName = declaringClass.getName().toString();
-		packageName = Util.getClassNameOrOuterMostClassNameIfNestedClass(packageName);
-		packageName = (packageName.contains("/") ? packageName.substring(1, packageName.lastIndexOf('/')) : "");
-
-		String path = specification.getSourceFilesRootDir() + '/';
-		path = (packageName.isEmpty() ? path : path + packageName + '/');
-
-		String sourceFileName = declaringClass.getSourceFileName();
-		Map<Integer, Annotation> annotationsForMethod = null;
-		try {
-			annotationsForMethod = extractor.retrieveAnnotations(path, sourceFileName);
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-
-		return annotationsForMethod;
 	}
 }

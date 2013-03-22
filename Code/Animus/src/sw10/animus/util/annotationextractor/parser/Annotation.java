@@ -7,7 +7,7 @@ public class Annotation {
 	
 	public static enum AnnotationType {
 		LOOPBOUND,
-		CALLTARGET
+		ARRAYSIZE
 	}
 	
 	public Annotation(Annotation.AnnotationType annoType, String annoValue) {

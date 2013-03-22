@@ -12,12 +12,13 @@ import sw10.animus.util.annotationextractor.parser.Annotation.AnnotationType;
 public class Parser {
 
 	private static final String ANNOTATION_FORMAT = "//@";
-	private static final String ANNOTATION_REGEX = "[" + ANNOTATION_FORMAT + "][\\s]*([a-zA-Z]*)[\\s]*[\\s]*[=][\\s]*([\\-_a-zA-Z0-9]+)";
+	private static final String ANNOTATION_REGEX = "[" + ANNOTATION_FORMAT + "][\\s]*([a-zA-Z]*)[\\s]*[\\s]*([a-zA-Z]*)[\\s]*[=][\\s]*([\\-_a-zA-Z0-9]+)";
 	
 	private static final Pattern annotationRegex = Pattern.compile(ANNOTATION_REGEX);
 	
 	private static final int ANNOTATION_TYPE_GROUP = 1;
-	private static final int ANNOTATION_VALUE_GROUP = 2;
+	private static final int ANNOTATION_VALUE_GROUP2 = 2;
+	private static final int ANNOTATION_VALUE_GROUP3 = 3;
 	
 	
 	public Map<Integer, Annotation> GetAnnotations(BufferedReader fileReader) throws IOException {
@@ -37,9 +38,15 @@ public class Parser {
 				
 				if(regexMatcher.find()) {
 					annotationType = regexMatcher.group(ANNOTATION_TYPE_GROUP);
-					annotationValue = regexMatcher.group(ANNOTATION_VALUE_GROUP);
-					if(annotationType.equals("loopbound")) {
+					annotationValue = regexMatcher.group(ANNOTATION_VALUE_GROUP2);
+					
+					if(annotationValue.startsWith("loop"))
+						annotationValue = regexMatcher.group(ANNOTATION_VALUE_GROUP3);
+					
+					if(annotationType.equals("loopbound") || annotationType.equals(("WCA"))) {
 						annotations.put(lineNumber, new Annotation(AnnotationType.LOOPBOUND, annotationValue));				
+					} else if(annotationType.equals("arraysize")) {
+						annotations.put(lineNumber, new Annotation(AnnotationType.ARRAYSIZE, annotationValue));
 					}
 				}
 			}

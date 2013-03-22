@@ -9,6 +9,7 @@ p {
 #content {
 	position: relative;
 	overflow: scroll;
+	height: auto;
 }
 
 #sidemenuAllocations,

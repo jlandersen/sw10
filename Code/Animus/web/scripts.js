@@ -24,23 +24,17 @@ $(function() {
   var divAllocations = $('#allocations');
   var divJVMStack = $('#JVMStack');
 
-  /* Heights */
-  var heightSummary = divSummary.height();
-  var heightCallgraph = divCallgraph.height();
-  var heightAllocations = '800px';
-  var heightJVMStack = '800px';
-
   /* Navigation bar */
   $('.nav').on('click', '#btnSummary', function() {
     if(menuActive == menuSummary)
       return;
-    toggleActive(menuSummary, divSummary, heightSummary);
+    toggleActive(menuSummary, divSummary);
   });
 
   $('.nav').on('click', '#btnCallgraph', function() {
     if(menuActive == menuCallgraph)
       return;
-    toggleActive(menuCallgraph, divCallgraph, heightCallgraph);
+    toggleActive(menuCallgraph, divCallgraph);
   });
 
   $('.nav').on('click', '#btnAllocations', function() {
@@ -50,9 +44,9 @@ $(function() {
       $('#sidemenuJVMStack').css('display', 'none');
       $('#sidemenuAllocations').css('display', 'block');
       divSidemenuAllocations.css({'width': '27%', 'padding': '10px'});
-      toggleActiveKeepSidemenu(menuAllocations, divAllocations, heightAllocations);
+      toggleActiveKeepSidemenu(menuAllocations, divAllocations);
     } else {
-      toggleActive(menuAllocations, divAllocations, heightAllocations); // fra summary
+      toggleActive(menuAllocations, divAllocations); // fra summary
       $('#sidemenuAllocations').css('display', 'block');
       divContent.animate({'left': '20%'}, 150, function() {
         divSidemenuAllocations.animate({'width': '27%'}, 150);
@@ -69,9 +63,9 @@ $(function() {
       $('#sidemenuAllocations').css('display', 'none');
       $('#sidemenuJVMStack').css('display', 'block');
       divSidemenuJVMStack.css({'width': '27%', 'padding': '10px'});
-      toggleActiveKeepSidemenu(menuJVMStack, divJVMStack, heightJVMStack);
+      toggleActiveKeepSidemenu(menuJVMStack, divJVMStack);
     } else { // fra summary
-      toggleActive(menuJVMStack, divJVMStack, heightJVMStack);
+      toggleActive(menuJVMStack, divJVMStack);
       $('#sidemenuJVMStack').css('display', 'block');
       divContent.animate({'left': '20%'}, 150, function() {
           divSidemenuJVMStack.animate({'width': '27%'}, 150);
@@ -82,7 +76,7 @@ $(function() {
   });
 
   
-  toggleActive = function(menu, div, height) {
+  toggleActive = function(menu, div) {
     /* Slide sidemenu back */
     if(menuActive == menuAllocations) {
       divSidemenuAllocations.animate({'width': '0%'}, 200, function() {
@@ -110,7 +104,6 @@ $(function() {
 
     menuActive = menu;
     divActive = div;
-    divContent.animate({'height': height}, 250);
   };
 
   toggleActiveKeepSidemenu = function(menu, div, height) {
@@ -126,7 +119,6 @@ $(function() {
 
     menuActive = menu;
     divActive = div;
-    divContent.animate({'height': height}, 250);
   }
 
   toggleMenuSelection = function(anchorId) {

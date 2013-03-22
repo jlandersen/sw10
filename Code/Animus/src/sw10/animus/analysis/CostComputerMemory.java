@@ -3,6 +3,8 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
@@ -12,17 +14,23 @@ import sw10.animus.analysis.ICostResult.ResultType;
 import sw10.animus.build.JVMModel;
 import sw10.animus.program.AnalysisSpecification;
 import sw10.animus.util.FileScanner;
+import sw10.animus.util.annotationextractor.extractor.AnnotationExtractor;
+import sw10.animus.util.annotationextractor.parser.Annotation;
 
+import com.ibm.wala.cfg.ShrikeCFG;
+import com.ibm.wala.cfg.ShrikeCFG.BasicBlock;
 import com.ibm.wala.classLoader.IBytecodeMethod;
 import com.ibm.wala.classLoader.IMethod;
 import com.ibm.wala.classLoader.ShrikeBTMethod;
 import com.ibm.wala.ipa.callgraph.CGNode;
+import com.ibm.wala.shrikeBT.IInstruction;
 import com.ibm.wala.shrikeCT.InvalidClassFileException;
 import com.ibm.wala.ssa.ISSABasicBlock;
 import com.ibm.wala.ssa.SSACFG;
 import com.ibm.wala.ssa.SSAInstruction;
 import com.ibm.wala.ssa.SSANewInstruction;
 import com.ibm.wala.types.TypeName;
+import com.ibm.wala.util.collections.Iterator2Iterable;
 import com.ibm.wala.util.collections.Pair;
 
 public class CostComputerMemory implements ICostComputer<CostResultMemory> {
@@ -42,6 +50,71 @@ public class CostComputerMemory implements ICostComputer<CostResultMemory> {
 		TypeName typeName = ((SSANewInstruction) instruction).getNewSite().getDeclaredType().getName();
 		String typeNameStr = typeName.toString();
 		CostResultMemory cost = new CostResultMemory();
+		if (typeNameStr.startsWith("[")) {
+			System.err.println("Arrays not supported");
+			//setCostForNewArrayObject(cost, typeName, typeNameStr, block);	
+		} else {
+			setCostForNewObject(cost, typeName, typeNameStr, block);
+		}
+
+		return cost;
+	}
+	
+	private Integer tryGetArrayLength(ISSABasicBlock block) {
+		IBytecodeMethod method = (IBytecodeMethod)block.getMethod();
+		ShrikeCFG shrikeCFG = ShrikeCFG.make(method);
+		BasicBlock shrikeBB = shrikeCFG.getNode(block.getGraphNodeId());	
+		
+		Integer arraySize = null;
+		IInstruction prevInst = null;
+		for(IInstruction inst : Iterator2Iterable.make(shrikeBB.iterator())) {
+			if(inst.toString().contains("[")) {
+				System.out.println(inst.toString());
+				System.out.println("\t SIIIIZE " + prevInst.toString());
+				arraySize = extractArrayLength(prevInst.toString());
+			}
+			prevInst = inst;
+		}
+		
+		return arraySize;
+	}
+	
+	private void setCostForNewArrayObject(CostResultMemory cost, TypeName typeName, String typeNameStr, ISSABasicBlock block)  {
+		
+		int allocationCost = 0;
+		Integer arrayLength = tryGetArrayLength(block);
+		
+		if(arrayLength == null) {
+			AnnotationExtractor extractor = AnnotationExtractor.getAnnotationExtractor();
+			
+			IBytecodeMethod method = (IBytecodeMethod)block.getMethod();
+			Map<Integer, Annotation> annotationsForMethod = extractor.getAnnotations(method);
+			
+			int lineNumber = method.getLineNumber(block.getFirstInstructionIndex());
+			
+			if (annotationsForMethod != null && annotationsForMethod.containsKey(lineNumber)) {
+				Annotation annotationForArray = annotationsForMethod.get(lineNumber);
+				allocationCost = Integer.parseInt(annotationForArray.getAnnotationValue());				
+			}
+			else
+			{
+				System.err.println(method.toString() + " allocates array without specified memory size annotation expected at line " + lineNumber);
+			}
+		} else {
+			allocationCost = arrayLength;
+		}
+		
+		cost.allocationCost = allocationCost;
+		cost.typeNameByNodeId.put(block.getGraphNodeId(), typeName);
+		cost.resultType = ResultType.TEMPORARY_BLOCK_RESULT;	
+	}
+	
+	private int extractArrayLength(String instruction) {
+		String number = instruction.substring(instruction.indexOf(',')+1, instruction.length()-1);
+		return Integer.parseInt(number);
+	}
+	
+	private void setCostForNewObject(CostResultMemory cost, TypeName typeName, String typeNameStr, ISSABasicBlock block) {
 		try {
 			cost.allocationCost = model.getSizeForQualifiedType(typeName);
 			cost.typeNameByNodeId.put(block.getGraphNodeId(), typeName);
@@ -49,8 +122,6 @@ public class CostComputerMemory implements ICostComputer<CostResultMemory> {
 		} catch(NoSuchElementException e) {
 			System.err.println("model.json does not contain type: " + typeNameStr);
 		}
-
-		return cost;
 	}
 
 	@Override

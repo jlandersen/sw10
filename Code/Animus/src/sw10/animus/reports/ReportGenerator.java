@@ -13,6 +13,7 @@ import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
 
+import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.VelocityEngine;
@@ -229,7 +230,6 @@ public class ReportGenerator {
 		        while ((line = fileJavaReader.readLine()) != null) {
 		        	code.append(line + "\n");
 		        }
-		        
 		        code.append("</pre>");
 				code.append("</div>");
 				
@@ -354,6 +354,8 @@ public class ReportGenerator {
 				code.append("</div>");
 			}
 		}
+		
+		
 		ctx.put("sidemenuAllocations", sidemenuAllocations.toString());
 		ctx.put("sidemenuJVMStack", sidemenuJVMStack.toString());
 		ctx.put("code", code.toString());

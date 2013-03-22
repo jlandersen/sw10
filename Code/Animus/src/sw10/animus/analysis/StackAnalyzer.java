@@ -63,6 +63,7 @@ public class StackAnalyzer {
 			return max;
 		} else {
 			memCost = (CostResultMemory)analysisResults.getResultsForNode(node);
+			memCost.setAccumStackCost(memCost.getStackCost());
 			return memCost.getStackCost();
 		}
 	}
