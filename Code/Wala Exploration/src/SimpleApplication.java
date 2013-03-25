@@ -80,7 +80,7 @@ public class SimpleApplication {
 		*/
 		Object obj = goodbye(5);
 		String str = obj.toString();		
-		
+		/*
 		int x = 2;
 		if(x == 2) {
 			for(int i = 0; i < 20; i++) { //@ loopbound = 20
@@ -90,5 +90,6 @@ public class SimpleApplication {
 			obj = new TrivialObject();
 			obj = new TrivialObject();
 		}
+		*/
 	}
 }

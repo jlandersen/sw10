@@ -5,15 +5,17 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.StringWriter;
+import java.lang.reflect.Member;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
 
-import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.VelocityEngine;
@@ -38,6 +40,8 @@ import com.ibm.wala.ssa.SSAInstruction;
 import com.ibm.wala.types.TypeName;
 import com.ibm.wala.util.WalaException;
 import com.ibm.wala.util.collections.HashMapFactory;
+import com.ibm.wala.util.collections.Iterator2Iterable;
+import com.ibm.wala.util.intset.IntIterator;
 import com.ibm.wala.viz.DotUtil;
 import com.ibm.wala.viz.NodeDecorator;
 
@@ -52,6 +56,7 @@ public class ReportGenerator {
 	private final String DT = "dt";
 	private final String PDF = "pdf";
 	private final String INDEX_HTML = "index.html";
+	private final String VISUALIZATION_JS = "visualization.js";
 	private final String CALL_GRAPH = "callGraph";
 	
 	private String OUTPUT_DIR;
@@ -77,24 +82,34 @@ public class ReportGenerator {
 
 		VelocityEngine ve = new VelocityEngine();
 		ve.init();
-        Template t = ve.getTemplate("templates/index.vm");
-        VelocityContext ctx = new VelocityContext();
+        Template index = ve.getTemplate("templates/index.vm");
+        Template visualization = ve.getTemplate("templates/visualization.vm");
+        VelocityContext ctxIndex = new VelocityContext();
+        VelocityContext ctxVisualization = new VelocityContext();
         
         /* CSS and JS */
         String webDir = new File(".").getCanonicalPath() + "/web/";
-        GenerateCSSIncludes(ctx, webDir);
-        GenerateJSIncludes(ctx, webDir);
+        GenerateCSSIncludes(ctxIndex, webDir);
+        GenerateJSIncludes(ctxIndex, webDir);
         
         /* Pages */
-        GenerateSummary(ctx);
-        GenerateCallgraph(ctx);
-        GenerateDetails(ctx, reportEntries);
+        GenerateSummary(ctxIndex);
+        GenerateCallgraph(visualization, ctxVisualization, ctxIndex, VISUALIZATION_JS);
+        GenerateDetails(ctxIndex, reportEntries);
         
-        StringWriter writer = new StringWriter();
-        t.merge(ctx, writer);
+        try {
+        	writeTemplateToFile(index, ctxIndex, INDEX_HTML);
+        } catch(IOException e) {
+        	System.err.println("Could not generate output file from template, index.vm");
+        } 
+	}
+	
+	private void writeTemplateToFile(Template template, Context ctx, String fileName) throws IOException {
+		StringWriter writer = new StringWriter();
+		template.merge(ctx, writer);
         String filecontent = writer.toString();
 
-        File htmlFile = new File(OUTPUT_DIR + File.separatorChar + INDEX_HTML);
+        File htmlFile = new File(OUTPUT_DIR + File.separatorChar + fileName);
         if(!htmlFile.exists()){
         	htmlFile.createNewFile();
         }
@@ -104,37 +119,137 @@ public class ReportGenerator {
         fw.close();
 	}
 	
-	private void GenerateCSSIncludes(Context ctx, String webDir) {
-		ctx.put("bootstrapCSS", webDir + "bootstrap/css/bootstrap.css");
-		ctx.put("fancyboxCSS", webDir + "fancyapps-fancyBox-0ffc358/source/jquery.fancybox.css");
-		ctx.put("syntaxCSS", webDir + "syntaxhighlighter_3.0.83/styles/shCoreDefault.css");
-		ctx.put("stylesCSS", webDir + "styles.css");
+	private void GenerateCSSIncludes(Context ctxIndex, String webDir) {
+		ctxIndex.put("bootstrapCSS", webDir + "bootstrap/css/bootstrap.css");
+		ctxIndex.put("fancyboxCSS", webDir + "fancyapps-fancyBox-0ffc358/source/jquery.fancybox.css");
+		ctxIndex.put("syntaxCSS", webDir + "syntaxhighlighter_3.0.83/styles/shCoreDefault.css");
+		ctxIndex.put("stylesCSS", webDir + "styles.css");
 	}
     
-	private void GenerateJSIncludes(Context ctx, String webDir) {
-		ctx.put("syntaxcoreJS", webDir + "syntaxhighlighter_3.0.83/scripts/shCore.js");
-		ctx.put("syntaxbrushJS", webDir + "syntaxhighlighter_3.0.83/scripts/shBrushJava.js");
-		ctx.put("fancyboxJS", webDir + "fancyapps-fancyBox-0ffc358/source/jquery.fancybox.pack.js");
-		ctx.put("bootstrapJS", webDir + "bootstrap/js/bootstrap.js");
-		ctx.put("scriptsJS", webDir + "scripts.js");
+	private void GenerateJSIncludes(Context ctxIndex, String webDir) {
+		ctxIndex.put("syntaxcoreJS", webDir + "syntaxhighlighter_3.0.83/scripts/shCore.js");
+		ctxIndex.put("syntaxbrushJS", webDir + "syntaxhighlighter_3.0.83/scripts/shBrushJava.js");
+		ctxIndex.put("fancyboxJS", webDir + "fancyapps-fancyBox-0ffc358/source/jquery.fancybox.pack.js");
+		ctxIndex.put("bootstrapJS", webDir + "bootstrap/js/bootstrap.js");
+		ctxIndex.put("arborJS", webDir + "arbor-v0.92/lib/arbor.js");
+		ctxIndex.put("visualizationJS", OUTPUT_DIR + File.separatorChar + VISUALIZATION_JS);
+		ctxIndex.put("scriptsJS", webDir + "scripts.js");
 	}
 	
-	private void GenerateSummary(VelocityContext ctx) {
-		ctx.put("application", "name");
-        ctx.put("classes", "number");
-        ctx.put("methods", "number");
+	private void GenerateSummary(VelocityContext ctxIndex) {
+		ctxIndex.put("application", "name");
+        ctxIndex.put("classes", "number");
+        ctxIndex.put("methods", "number");
 	}
 	
-	private void GenerateCallgraph(VelocityContext ctx) {
+	private LinkedList<CGNode> entries;
+	private ArrayList<CGNode> affectedWorstCaseReferencedMethodsCGNodes;
+	private ArrayList<CGNode> affectedWorstCaseCallStack;
+	private ArrayList<CGNode> nodesAdded;
+	private CallGraph callGraph;
+	private void GenerateCallgraph(Template visualization, VelocityContext ctxVisualization, VelocityContext ctxIndex, String fileName) {
+		callGraph = environment.getCallGraph();
+		
 		try {
-			GenerateCG(environment.getCallGraph());
+			GenerateCG(callGraph);
 		} catch (WalaException e) {
 			System.err.println("Could not generate callgraph");
 		}
-		ctx.put("callgraph", "");   
+		
+		entries = specification.getEntryPointCGNodes();
+			
+		/* Collect all affected worst-case referenced/Stack CGNodes for every entry point */
+		affectedWorstCaseReferencedMethodsCGNodes = new ArrayList<CGNode>();
+		affectedWorstCaseCallStack = new ArrayList<CGNode>();
+		for(CGNode cgNode : entries) {
+			CostResultMemory cost = (CostResultMemory)analysisResults.getResultsForNode(cgNode);
+			ArrayList<CGNode> wcRefCGNodes = cost.worstcaseReferencesMethods;
+			ArrayList<CGNode> wcStackCGNodes = AnalysisResults.getAnalysisResults().getWorstCaseStackTraceFromNode(cgNode);
+			for(CGNode wcRefCGNode : wcRefCGNodes) {
+				if(!affectedWorstCaseReferencedMethodsCGNodes.contains(wcRefCGNode)) {
+					affectedWorstCaseReferencedMethodsCGNodes.add(wcRefCGNode);
+				}
+			}
+			for(CGNode wcStackCGNode : wcStackCGNodes) {
+				if(!affectedWorstCaseCallStack.contains(wcStackCGNode)) {
+					affectedWorstCaseCallStack.add(wcStackCGNode);
+				}
+			}
+		}
+		
+		nodesAdded = new ArrayList<CGNode>();
+		
+		StringBuilder graph  = new StringBuilder();
+		StringBuilder nodes  = new StringBuilder();
+		
+		/* Constructing graph */
+		for(CGNode cgNode : Iterator2Iterable.make(callGraph.iterator())) {
+			addNode(nodes, graph, cgNode);
+		}
+		
+		ctxVisualization.put("nodes", nodes.toString());
+		ctxVisualization.put("graph", graph.toString());
+		
+		try {
+			writeTemplateToFile(visualization, ctxVisualization, fileName);
+		} catch (IOException e) {
+			System.err.println("Could not generate output file from template, index.vm");
+		}
 	}
 	
-	private void GenerateDetails(VelocityContext ctx, ArrayList<ReportEntry> reportEntries) throws IOException {
+	private void addNode(StringBuilder nodes, StringBuilder graph, CGNode cgNode) {
+		if(!nodesAdded.contains(cgNode)) {
+			int id = cgNode.getGraphNodeId();
+			IMethod method = cgNode.getMethod();
+			String classLoader = method.getDeclaringClass().getClassLoader().getName().toString();
+			
+			String signature = method.getSignature();
+			
+			StringBuilder nodeObject = new StringBuilder();
+			StringBuilder nodeObjectSuccs = new StringBuilder();
+			
+			
+			IntIterator intIterator = callGraph.getSuccNodeNumbers(cgNode).intIterator();
+			boolean isExpandable = (intIterator.hasNext() ? true : false);
+			while(intIterator.hasNext()) {
+				nodeObjectSuccs.append(intIterator.next());
+				if(intIterator.hasNext()) {
+					nodeObjectSuccs.append(", ");
+				}
+			}
+			
+			String innerLabel = "";
+			boolean inReferences = affectedWorstCaseReferencedMethodsCGNodes.contains(cgNode);
+			boolean inStack = affectedWorstCaseCallStack.contains(cgNode);
+			
+			if(inReferences || inStack) {
+				if(inReferences && inStack) {
+					innerLabel = "X";
+				} else if(inReferences) {
+					innerLabel = "A";
+				} else {
+					innerLabel = "S";
+				}
+			}
+						
+			boolean isEntry = false;
+			if(entries.contains(cgNode)) {
+				isEntry = true;
+				innerLabel = "X";
+			}
+			
+			nodeObject.append("{id:" + id + ", outerLabel:'" + signature + "', innerLabel:'" + innerLabel + "', entry:" + isEntry + ", classloader:'" + classLoader + "', successors:[" + nodeObjectSuccs + "]}");
+			nodes.append("_this.nodes[" + id + "] = " + nodeObject + "\n");
+			
+			if(isEntry) {
+				graph.append("sys.addNode(" + id +  ", {mass:1.0, outerLabel:'" + signature + "', innerLabel:'" + innerLabel + "', entry:true, classloader:'" + classLoader + "', expanded:false, expandable:" + isExpandable + "})\n");
+			}
+			
+			nodesAdded.add(cgNode);
+		}
+	}
+	
+	private void GenerateDetails(VelocityContext ctxIndex, ArrayList<ReportEntry> reportEntries) throws IOException {
 		
 		BufferedReader fileJavaReader;
 		
@@ -155,14 +270,7 @@ public class ReportGenerator {
 				if(packages.equals(""))
 					packages = "default";
 								
-				IMethod method = cgNode.getMethod();
-				
-				System.out.println("DEBUG Signature: " + method.getSignature());
-				System.out.println("DEBUG Declaring Class name: " + method.getDeclaringClass().getName());
-				System.out.println("DEBUG Descriptor: " + method.getDescriptor());
-				System.out.println("DEBUG Method name: " + method.getName());
-				
-				
+				IMethod method = cgNode.getMethod();				
 				String guid = java.util.UUID.randomUUID().toString();
 				
 				CostResultMemory memCost = (CostResultMemory)cost;
@@ -176,13 +284,13 @@ public class ReportGenerator {
 				}
 				
 				/* JVMStack side menu */
-				sidemenuJVMStack.append("<li><a id=\"methodjvm-" + guid + "\" href=\"#\"><i class=\"icon-home icon-black\"></i>" + method.getSignature() + "</a></li>\n");
+				sidemenuJVMStack.append("<li><a title=\"" + method.getSignature() + "\" id=\"methodjvm-" + guid + "\" href=\"#\"><i class=\"icon-home icon-black\"></i>" + method.getSignature() + "</a></li>\n");
 				sidemenuJVMStack.append("<ul class=\"nav nav-list\">");
 				sidemenuJVMStack.append("<li><i class=\"icon-certificate icon-black\"></i>Cost: " + memCost.getAccumStackCost() + "</li>\n");
 				sidemenuJVMStack.append("</ul>");
 				
 				/* Allocations side menu */
-				sidemenuAllocations.append("<li><a id=\"method-" + guid + "\" href=\"#\"><i class=\"icon-home icon-black\"></i>" + method.getSignature() + "</a></li>\n");
+				sidemenuAllocations.append("<li><a title=\"" + method.getSignature() + "\" id=\"method-" + guid + "\" href=\"#\"><i class=\"icon-home icon-black\"></i>" + method.getSignature() + "</a></li>\n");
 				
 				/* Sub-menu level 1  */
 				sidemenuAllocations.append("<ul class=\"nav nav-list\">");
@@ -356,10 +464,10 @@ public class ReportGenerator {
 		}
 		
 		
-		ctx.put("sidemenuAllocations", sidemenuAllocations.toString());
-		ctx.put("sidemenuJVMStack", sidemenuJVMStack.toString());
-		ctx.put("code", code.toString());
-		ctx.put("JVMStack", jvmStack.toString());
+		ctxIndex.put("sidemenuAllocations", sidemenuAllocations.toString());
+		ctxIndex.put("sidemenuJVMStack", sidemenuJVMStack.toString());
+		ctxIndex.put("code", code.toString());
+		ctxIndex.put("JVMStack", jvmStack.toString());
 	}
 	
 	private void GenerateCFG(SSACFG cfg, String guid) throws WalaException{

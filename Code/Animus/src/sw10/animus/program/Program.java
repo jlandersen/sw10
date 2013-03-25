@@ -22,7 +22,7 @@ import com.ibm.wala.util.io.CommandLine;
 
 public class Program {
 
-	public static void main(String[] args) throws IOException, IllegalArgumentException, CancelException, InstantiationException, IllegalAccessException, WalaException, SecurityException, InvocationTargetException, NoSuchMethodException {
+	public static void main(String[] args) throws IOException, IllegalArgumentException, CancelException, InstantiationException, IllegalAccessException, WalaException, SecurityException, InvocationTargetException, NoSuchMethodException {		
 		AnalysisSpecification specification = parseCommandLineArguments(args);
 		AnalysisEnvironment environment = AnalysisEnvironmentBuilder.makeFromSpecification(specification);
 		Analyzer analyzer = Analyzer.makeAnalyzer();

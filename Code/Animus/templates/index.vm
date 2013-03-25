@@ -3,6 +3,7 @@
   <head>
     <title>Auto-Generated HTML File</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <!-- Styles -->
     <link rel="stylesheet" href="$bootstrapCSS">
     <link rel="stylesheet" href="$fancyboxCSS" />
@@ -14,6 +15,9 @@
     <script src="http://code.jquery.com/jquery.js"></script>
     <script src="$fancyboxJS"></script>
     <script src="$bootstrapJS"></script>
+    <script src="$arborJS"></script>
+    <!-- User-defined Scripts -->
+   	<script src="$visualizationJS"></script>
     <script src="$scriptsJS"></script>
   </head>
   <body>
@@ -76,7 +80,9 @@
       			</tbody>
       		</table>
         </div>
-        <div id="callgraph">$callgraph</div>
+        <div id="callgraph">
+        	<canvas id="viewport" width="800" height="600"></canvas>
+        </div>
         <div id="allocations">$code</div>
         <div id="JVMStack">$JVMStack</div>
       </div>
