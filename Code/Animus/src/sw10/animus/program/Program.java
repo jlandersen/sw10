@@ -50,7 +50,23 @@ public class Program {
 		if(jvmModel == null || application == null 
 				|| jarIncludesStdLibraries == null || sourceFilesRootDir == null 
 				|| outputDir == null || mainClass == null) {
-			printCommandLineUsage();
+			
+			StringBuilder nulls = new StringBuilder();
+			
+			if(jvmModel == null)
+				nulls.append(Config.COMMANDLINE_JVM_MODEL + "\n");
+			if(application == null)
+				nulls.append(Config.COMMANDLINE_APPLICATION + "\n");
+			if(jarIncludesStdLibraries == null)
+				nulls.append(Config.COMMANDLINE_JARINCLUDESSTDLIBRARIES + "\n");
+			if(sourceFilesRootDir == null)
+				nulls.append(Config.COMMANDLINE_SOURCES + "\n");
+			if(outputDir == null)
+				nulls.append(Config.COMMANDLINE_OUTPUT + "\n");
+			if(mainClass == null)
+				nulls.append(Config.COMMANDLINE_MAINCLASS + "\n");
+			
+			printCommandLineUsage(nulls);		
 		} else {
 			specification.setJvmModel(JVMModel.makeFromJson(jvmModel));
 			specification.setApplicationJar(application);
@@ -71,7 +87,7 @@ public class Program {
 				} else if(analysis.equalsIgnoreCase("stack")) {
 					type = AnalysisType.STACK; 
 				} else {
-					printCommandLineUsage();
+					printCommandLineUsage(new StringBuilder(analysis + " is invalid for " + Config.COMMANDLINE_ANALYSIS));
 				}
 				
 				specification.setTypeOfAnalysisPerformed(type);
@@ -84,7 +100,7 @@ public class Program {
 				} else if(reports.equalsIgnoreCase("false")) {
 					report = false;
 				} else {
-					printCommandLineUsage();
+					printCommandLineUsage(new StringBuilder(report + " is invalid for " + Config.COMMANDLINE_REPORTS));
 				}
 				
 				specification.setShouldGenerateAnalysisReports(report);
@@ -106,14 +122,16 @@ public class Program {
 		}
 	}
 	
-	public static void printCommandLineUsage() {
+	public static void printCommandLineUsage(StringBuilder nulls) {
+		
+		System.err.print("The following arguments were null: \n" + nulls);
 		System.err.print("Usage: \n" +
 				"Required\n" +
-				"\t-jvmmodel <file>.json : the corresponding JVM model for analysis, see documentation for format\n" +
+				"\t-jvm_model <file>.json : the corresponding JVM model for analysis, see documentation for format\n" +
 				"\t-application <file>.jar : jar file containing the application to be analysed\n" +
-				"\t-sources <directory> : root directory for source files for the application\n" +
-				"\t-output <directory> : directory for generated reports files\n" +
-				"\t-entrypoint <package.type> : the type containing main method\n" +
+				"\t-source_files_root_dir <directory> : root directory for source files for the application\n" +
+				"\t-output_dir <directory> : directory for generated reports files\n" +
+				"\t-entry_points <package.type> : the type containing main method\n" +
 				"Optional\n" +
 	      		"\t-analysis all|stack|allocations: type of analysis performed - defaults to all\n" +
 	      		"\t-reports true|false : specifies if full reports should be generated for the output directory\n");

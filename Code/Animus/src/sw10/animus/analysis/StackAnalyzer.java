@@ -2,13 +2,15 @@ package sw10.animus.analysis;
 
 import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.Map.Entry;
 
 import sw10.animus.build.AnalysisEnvironment;
 import sw10.animus.program.AnalysisSpecification;
 
 import com.ibm.wala.ipa.callgraph.CGNode;
 import com.ibm.wala.ipa.callgraph.CallGraph;
+import com.ibm.wala.ipa.callgraph.propagation.cfa.CallString;
+import com.ibm.wala.ipa.callgraph.propagation.cfa.CallStringContext;
+import com.ibm.wala.ipa.callgraph.propagation.cfa.CallStringContextSelector;
 
 public class StackAnalyzer {
 	private CallGraph cg;
@@ -30,15 +32,6 @@ public class StackAnalyzer {
 		for(CGNode entryNode : entryNodes) {
 			dist(entryNode);
 		}
-		
-		for(Entry<CGNode, ICostResult> entry : analysisResults.getNodesProcessed().entrySet()) {
-			CostResultMemory mem = (CostResultMemory)entry.getValue();
-			System.out.println("ENTRY: " + entry.toString());
-			System.out.println("\t STACK     : " + mem.getMaxStackHeight());
-			System.out.println("\t LOCALS    : " + mem.getMaxLocals());
-			System.out.println("\t COST      : " + mem.getStackCost());
-			System.out.println("\t ACCUMCOST : " + mem.getAccumStackCost());
-		}
 	}
 	
 	private long dist(CGNode node) {
@@ -50,7 +43,19 @@ public class StackAnalyzer {
 		if(iteratorSuccessors.hasNext()) {
 			do{
 				CGNode successor = iteratorSuccessors.next();
+				CallStringContext h = (CallStringContext)node.getContext();
+				CallString m = (CallString)h.get(CallStringContextSelector.CALL_STRING);
+				if (Analyzer.doesContainMethod(m.getMethods(), successor.getMethod())) {
+					continue;
+				}
 				memCost = (CostResultMemory)analysisResults.getResultsForNode(node);
+				if (memCost == null) {
+					memCost = new CostResultMemory();
+					memCost.setAccumStackCost(0);
+					memCost.setMaxLocals(0);
+					memCost.setMaxStackHeight(0);
+					analysisResults.saveResultForNode(node, memCost);
+				}
 				cost = dist(successor) + memCost.getStackCost();
 				if(cost > max) {
 					maxSuccessor = successor;
@@ -63,7 +68,15 @@ public class StackAnalyzer {
 			return max;
 		} else {
 			memCost = (CostResultMemory)analysisResults.getResultsForNode(node);
-			memCost.setAccumStackCost(memCost.getStackCost());
+			if (memCost == null) {
+				memCost = new CostResultMemory();
+				memCost.setAccumStackCost(0);
+				memCost.setMaxLocals(0);
+				memCost.setMaxStackHeight(0);
+				analysisResults.saveResultForNode(node, memCost);
+			} else {
+				memCost.setAccumStackCost(memCost.getStackCost());
+			}
 			return memCost.getStackCost();
 		}
 	}

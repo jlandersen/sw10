@@ -32,10 +32,11 @@ import sw10.animus.util.annotationextractor.parser.Annotation;
 
 import com.ibm.wala.classLoader.CallSiteReference;
 import com.ibm.wala.classLoader.IBytecodeMethod;
-import com.ibm.wala.classLoader.IClass;
 import com.ibm.wala.classLoader.IMethod;
 import com.ibm.wala.ipa.callgraph.CGNode;
-import com.ibm.wala.ipa.callgraph.CallGraph;
+import com.ibm.wala.ipa.callgraph.propagation.cfa.CallString;
+import com.ibm.wala.ipa.callgraph.propagation.cfa.CallStringContext;
+import com.ibm.wala.ipa.callgraph.propagation.cfa.CallStringContextSelector;
 import com.ibm.wala.shrikeCT.InvalidClassFileException;
 import com.ibm.wala.ssa.IR;
 import com.ibm.wala.ssa.ISSABasicBlock;
@@ -110,8 +111,8 @@ public class Analyzer {
 		} catch (WalaException e) {			
 		}
 		SlowSparseNumberedLabeledGraph<ISSABasicBlock, String> cfg = sanitized.fst;
-		Map<String, Pair<Integer, Integer>> edgeLabelToNodesIDs = sanitized.snd;
-
+		Map<String, Pair<Integer, Integer>> edgeLabelToNodesIDs = sanitized.snd;		
+		
 		Map<Integer, Annotation> annotationByLineNumber = extractor.getAnnotations(method);
 		Map<Integer, ArrayList<Integer>> loopBlocksByHeaderBlockId = getLoops(cfg, ir.getControlFlowGraph().entry());
 		
@@ -331,7 +332,14 @@ public class Analyzer {
 				Set<CGNode> possibleTargets = environment.getCallGraph().getPossibleTargets(node, callSiteRef);
 				ICostResult maximumResult = null;
 				ICostResult tempResult = null;
+				CallStringContext h = (CallStringContext)node.getContext();
+				CallString m = (CallString)h.get(CallStringContextSelector.CALL_STRING);
+			
 				for(CGNode target : Iterator2Iterable.make(possibleTargets.iterator())) {
+					if (doesContainMethod(m.getMethods(), target.getMethod())) {
+						System.out.println("SKIPPING" + target.toString() + " on " + target.getMethod().toString());
+						continue;
+					}
 					tempResult = analyzeNode(target);
 					if(maximumResult == null || tempResult.getCostScalar() > maximumResult.getCostScalar())
 						maximumResult = tempResult;
@@ -348,6 +356,16 @@ public class Analyzer {
 		}
 
 		return costForInstruction;
+	}
+	
+	public static boolean doesContainMethod(IMethod[] methods, IMethod method) {
+		for(IMethod m : methods) {
+			if (m.equals(method)) {
+				return true;
+			}
+		}
+		
+		return false;
 	}
 
 	private Map<Integer, ArrayList<Integer>> getLoops(Graph<ISSABasicBlock> graph, ISSABasicBlock entry) {

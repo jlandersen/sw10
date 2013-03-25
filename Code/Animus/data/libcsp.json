@@ -1,0 +1,13 @@
+{
+	ReferenceSize: 4,
+	PrimordialTypeSizes: [
+		{"java.lang.Object": 1},
+		{"java.lang.Exception": 10},
+		{"java.lang.StringIndexOutOfBoundsException": 3},
+		{"java.lang.StringBuilder": 2},
+		{"java.lang.String": 3}		
+	],
+	ApplicationTypeSizes: [
+		{"sw901e12.csp.core.PacketCore": 1}
+	]
+}

@@ -19,9 +19,14 @@ import com.ibm.wala.ipa.callgraph.AnalysisOptions.ReflectionOptions;
 import com.ibm.wala.ipa.callgraph.AnalysisScope;
 import com.ibm.wala.ipa.callgraph.CallGraph;
 import com.ibm.wala.ipa.callgraph.Entrypoint;
+import com.ibm.wala.ipa.callgraph.impl.DefaultContextSelector;
+import com.ibm.wala.ipa.callgraph.impl.Everywhere;
 import com.ibm.wala.ipa.callgraph.impl.Util;
 import com.ibm.wala.ipa.callgraph.propagation.cfa.ZeroXCFABuilder;
+import com.ibm.wala.ipa.callgraph.propagation.cfa.ZeroXContainerCFABuilder;
 import com.ibm.wala.ipa.callgraph.propagation.cfa.ZeroXInstanceKeys;
+import com.ibm.wala.ipa.callgraph.propagation.cfa.nCFABuilder;
+import com.ibm.wala.ipa.callgraph.propagation.cfa.nCFAContextSelector;
 import com.ibm.wala.ipa.cha.ClassHierarchy;
 import com.ibm.wala.ipa.cha.ClassHierarchyException;
 import com.ibm.wala.util.CancelException;
@@ -125,10 +130,11 @@ public class AnalysisEnvironmentBuilder {
 
 		Util.addDefaultSelectors(analysisOptions, classHierarchy);
 		Util.addDefaultBypassLogic(analysisOptions, analysisScope, Util.class.getClassLoader(), classHierarchy);		
-
+		
 		AnalysisCache cache = new AnalysisCache();
-		ZeroXCFABuilder builder = new ZeroXCFABuilder(classHierarchy, analysisOptions, cache, null, 
-				null, ZeroXInstanceKeys.NONE | ZeroXInstanceKeys.SMUSH_MANY);
+		//ZeroXCFABuilder builder = new ZeroXCFABuilder(classHierarchy, analysisOptions, cache, null, 
+				//null, ZeroXInstanceKeys.NONE | ZeroXInstanceKeys.SMUSH_MANY);
+		nCFABuilder builder = new nCFABuilder(3, classHierarchy, analysisOptions, cache, null, null);
 
 		return builder.makeCallGraph(analysisOptions);
 	}
