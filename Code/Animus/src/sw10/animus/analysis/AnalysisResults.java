@@ -6,6 +6,8 @@ import java.util.Map;
 import java.util.Set;
 
 import sw10.animus.program.AnalysisSpecification;
+import sw10.animus.reports.JavaFileData;
+import sw10.animus.reports.ReportData;
 import sw10.animus.reports.ReportEntry;
 
 import com.ibm.wala.ipa.callgraph.CGNode;
@@ -14,12 +16,14 @@ public class AnalysisResults {
 	private static AnalysisResults singletonObject;
 	private Map<CGNode, ICostResult> nodesProcessed;
 	private ArrayList<ReportEntry> reportEntries;
+	private ReportData reportData;
 	private AnalysisSpecification analysisSpecification;
 	private Map<CGNode, CGNode> worstCaseStackTraceNextNodeInStackByNode;
 
 	private AnalysisResults() {
 		this.nodesProcessed = new HashMap<CGNode, ICostResult>();
 		this.reportEntries = new ArrayList<ReportEntry>();
+		this.reportData = new ReportData();
 		this.worstCaseStackTraceNextNodeInStackByNode = new HashMap<CGNode, CGNode>();
 		this.analysisSpecification = AnalysisSpecification.getAnalysisSpecification(); 
 	}
@@ -68,11 +72,19 @@ public class AnalysisResults {
 		return trace;
 	}
 	
+	public void addNonEntryReportData(final String sourceFilePath, final Set<Integer> lines, final CGNode cgNode) {
+		JavaFileData dataForNode = reportData.getJavaFileDataForCGNode(cgNode);
+		if (dataForNode == null) {
+			dataForNode = reportData.addNewJavaFileData(sourceFilePath, cgNode.getMethod().getDeclaringClass());
+		}
+		
+		dataForNode.addLineNumbersForCGNode(cgNode, lines);
+	}
+	
 	public void addReportData(final String sourceFilePath, final Set<Integer> lines, final CGNode cgNode, final ICostResult cost) {
 		int startIndex = analysisSpecification.getSourceFilesRootDir().length();
 		int stopIndex = sourceFilePath.lastIndexOf('/');
 		final String packages = sourceFilePath.substring(startIndex, stopIndex).replace('/', '.');
-		
 		for(ReportEntry entry : reportEntries) {
 			if(entry.getSource().equals(sourceFilePath)) {
 				entry.addEntry(cgNode, cost);

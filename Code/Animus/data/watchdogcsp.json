@@ -1,0 +1,9 @@
+{
+	ReferenceSize: 4,
+	PrimordialTypeSizes: [
+		{"java.lang.Object": 1}
+	],
+	ApplicationTypeSizes: [
+		{"sw901e12.csp.core.PacketCore": 8}
+	]
+}

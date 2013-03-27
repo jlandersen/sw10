@@ -2,6 +2,7 @@ package sw10.animus.analysis;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import com.ibm.wala.ipa.callgraph.CGNode;
@@ -36,6 +37,10 @@ public class CostResultMemory implements ICostResult {
 		typeNameByNodeId = new HashMap<Integer, TypeName>();
 		worstcaseReferencesMethods = new ArrayList<CGNode>();
 		resultType = ResultType.TEMPORARY_BLOCK_RESULT;		
+	}
+	
+	public List<CGNode> getWorstCaseReferencedMethods() {
+		return worstcaseReferencesMethods;
 	}
 	
 	public long getAccumStackCost() {

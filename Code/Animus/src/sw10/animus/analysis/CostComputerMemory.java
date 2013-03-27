@@ -51,7 +51,10 @@ public class CostComputerMemory implements ICostComputer<CostResultMemory> {
 		String typeNameStr = typeName.toString();
 		CostResultMemory cost = new CostResultMemory();
 		if (typeNameStr.startsWith("[")) {
+			IBytecodeMethod method = (IBytecodeMethod)block.getMethod();
+			int lineNumber = method.getLineNumber(block.getFirstInstructionIndex());
 			System.err.println("Arrays not supported");
+			System.err.println("- found on line " + lineNumber + " in " + method.toString());
 			//setCostForNewArrayObject(cost, typeName, typeNameStr, block);	
 		} else {
 			setCostForNewObject(cost, typeName, typeNameStr, block);
@@ -142,7 +145,7 @@ public class CostComputerMemory implements ICostComputer<CostResultMemory> {
 		boolean isEntryPointCGNode = analysisSpecification.isEntryPointCGNode(cgNode);
 		
 		IMethod method = cgNode.getMethod();
-		if(isEntryPointCGNode) {
+		if(cgNode.getMethod().getDeclaringClass().getClassLoader().getName().toString().equals("Application")) {
 			bytecodeMethod = (IBytecodeMethod)method;
 			javaFileName = bytecodeMethod.getDeclaringClass().getSourceFileName();
 			cfg = cgNode.getIR().getControlFlowGraph();
@@ -168,7 +171,7 @@ public class CostComputerMemory implements ICostComputer<CostResultMemory> {
 						continue;
 					int blockDstID = edges.snd;
 					
-					if(isEntryPointCGNode) {
+					if(cgNode.getMethod().getDeclaringClass().getClassLoader().getName().toString().equals("Application")) {
 						SSACFG.BasicBlock blockDst = cfg.getBasicBlock(blockDstID);
 						try {
 							if(blockDst.getFirstInstructionIndex() >= 0) {
@@ -216,9 +219,12 @@ public class CostComputerMemory implements ICostComputer<CostResultMemory> {
 				}
 			}
 		}
-
+		
 		if(isEntryPointCGNode) {
 			analysisResults.addReportData(sourceFilePath, lines, cgNode, results);
+		}
+		else if (cgNode.getMethod().getDeclaringClass().getClassLoader().getName().toString().equals("Application")) {
+			analysisResults.addNonEntryReportData(sourceFilePath, lines, cgNode);
 		}
 		
 		results.resultType = ResultType.COMPLETE_NODE_RESULT;

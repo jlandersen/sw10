@@ -83,9 +83,7 @@ public class ReportGenerator {
 		VelocityEngine ve = new VelocityEngine();
 		ve.init();
         Template index = ve.getTemplate("templates/index.vm");
-        Template visualization = ve.getTemplate("templates/visualization.vm");
         VelocityContext ctxIndex = new VelocityContext();
-        VelocityContext ctxVisualization = new VelocityContext();
         
         /* CSS and JS */
         String webDir = new File(".").getCanonicalPath() + "/web/";
@@ -94,14 +92,20 @@ public class ReportGenerator {
         
         /* Pages */
         GenerateSummary(ctxIndex);
-        GenerateCallgraph(visualization, ctxVisualization, ctxIndex, VISUALIZATION_JS);
         GenerateDetails(ctxIndex, reportEntries);
+        GenerateJSONForCallGraph();
         
         try {
         	writeTemplateToFile(index, ctxIndex, INDEX_HTML);
         } catch(IOException e) {
         	System.err.println("Could not generate output file from template, index.vm");
         } 
+	}
+	
+	private void GenerateJSONForCallGraph() {
+		ReportDataToJSONConverter converter = new ReportDataToJSONConverter();
+		converter.createCallGraphJson();
+		
 	}
 	
 	private void writeTemplateToFile(Template template, Context ctx, String fileName) throws IOException {
@@ -132,7 +136,8 @@ public class ReportGenerator {
 		ctxIndex.put("fancyboxJS", webDir + "fancyapps-fancyBox-0ffc358/source/jquery.fancybox.pack.js");
 		ctxIndex.put("bootstrapJS", webDir + "bootstrap/js/bootstrap.js");
 		ctxIndex.put("arborJS", webDir + "arbor-v0.92/lib/arbor.js");
-		ctxIndex.put("visualizationJS", OUTPUT_DIR + File.separatorChar + VISUALIZATION_JS);
+		ctxIndex.put("JSONJS", webDir + "sample.js");
+		ctxIndex.put("graphJS", webDir + "graph.js");
 		ctxIndex.put("scriptsJS", webDir + "scripts.js");
 	}
 	
@@ -140,113 +145,6 @@ public class ReportGenerator {
 		ctxIndex.put("application", "name");
         ctxIndex.put("classes", "number");
         ctxIndex.put("methods", "number");
-	}
-	
-	private LinkedList<CGNode> entries;
-	private ArrayList<CGNode> affectedWorstCaseReferencedMethodsCGNodes;
-	private ArrayList<CGNode> affectedWorstCaseCallStack;
-	private ArrayList<CGNode> nodesAdded;
-	private CallGraph callGraph;
-	private void GenerateCallgraph(Template visualization, VelocityContext ctxVisualization, VelocityContext ctxIndex, String fileName) {
-		callGraph = environment.getCallGraph();
-		
-		try {
-			GenerateCG(callGraph);
-		} catch (WalaException e) {
-			System.err.println("Could not generate callgraph");
-		}
-		
-		entries = specification.getEntryPointCGNodes();
-			
-		/* Collect all affected worst-case referenced/Stack CGNodes for every entry point */
-		affectedWorstCaseReferencedMethodsCGNodes = new ArrayList<CGNode>();
-		affectedWorstCaseCallStack = new ArrayList<CGNode>();
-		for(CGNode cgNode : entries) {
-			CostResultMemory cost = (CostResultMemory)analysisResults.getResultsForNode(cgNode);
-			ArrayList<CGNode> wcRefCGNodes = cost.worstcaseReferencesMethods;
-			ArrayList<CGNode> wcStackCGNodes = AnalysisResults.getAnalysisResults().getWorstCaseStackTraceFromNode(cgNode);
-			for(CGNode wcRefCGNode : wcRefCGNodes) {
-				if(!affectedWorstCaseReferencedMethodsCGNodes.contains(wcRefCGNode)) {
-					affectedWorstCaseReferencedMethodsCGNodes.add(wcRefCGNode);
-				}
-			}
-			for(CGNode wcStackCGNode : wcStackCGNodes) {
-				if(!affectedWorstCaseCallStack.contains(wcStackCGNode)) {
-					affectedWorstCaseCallStack.add(wcStackCGNode);
-				}
-			}
-		}
-		
-		nodesAdded = new ArrayList<CGNode>();
-		
-		StringBuilder graph  = new StringBuilder();
-		StringBuilder nodes  = new StringBuilder();
-		
-		/* Constructing graph */
-		for(CGNode cgNode : Iterator2Iterable.make(callGraph.iterator())) {
-			addNode(nodes, graph, cgNode);
-		}
-		
-		ctxVisualization.put("nodes", nodes.toString());
-		ctxVisualization.put("graph", graph.toString());
-		
-		try {
-			writeTemplateToFile(visualization, ctxVisualization, fileName);
-		} catch (IOException e) {
-			System.err.println("Could not generate output file from template, index.vm");
-		}
-	}
-	
-	private void addNode(StringBuilder nodes, StringBuilder graph, CGNode cgNode) {
-		if(!nodesAdded.contains(cgNode)) {
-			int id = cgNode.getGraphNodeId();
-			IMethod method = cgNode.getMethod();
-			String classLoader = method.getDeclaringClass().getClassLoader().getName().toString();
-			
-			String signature = method.getSignature();
-			
-			StringBuilder nodeObject = new StringBuilder();
-			StringBuilder nodeObjectSuccs = new StringBuilder();
-			
-			
-			IntIterator intIterator = callGraph.getSuccNodeNumbers(cgNode).intIterator();
-			boolean isExpandable = (intIterator.hasNext() ? true : false);
-			while(intIterator.hasNext()) {
-				nodeObjectSuccs.append(intIterator.next());
-				if(intIterator.hasNext()) {
-					nodeObjectSuccs.append(", ");
-				}
-			}
-			
-			String innerLabel = "";
-			boolean inReferences = affectedWorstCaseReferencedMethodsCGNodes.contains(cgNode);
-			boolean inStack = affectedWorstCaseCallStack.contains(cgNode);
-			
-			if(inReferences || inStack) {
-				if(inReferences && inStack) {
-					innerLabel = "X";
-				} else if(inReferences) {
-					innerLabel = "A";
-				} else {
-					innerLabel = "S";
-				}
-			}
-						
-			boolean isEntry = false;
-			if(entries.contains(cgNode)) {
-				isEntry = true;
-				innerLabel = "X";
-			}
-			
-			nodeObject.append("{id:" + id + ", outerLabel:'" + signature + "', innerLabel:'" + innerLabel + "', entry:" + isEntry + ", classloader:'" + classLoader + "', successors:[" + nodeObjectSuccs + "]}");
-			nodes.append("_this.nodes[" + id + "] = " + nodeObject + "\n");
-			
-			if(isEntry) {
-				graph.append("sys.addNode(" + id +  ", {mass:1.0, outerLabel:'" + signature + "', innerLabel:'" + innerLabel + "', entry:true, classloader:'" + classLoader + "', expanded:false, expandable:" + isExpandable + "})\n");
-			}
-			
-			nodesAdded.add(cgNode);
-		}
 	}
 	
 	private void GenerateDetails(VelocityContext ctxIndex, ArrayList<ReportEntry> reportEntries) throws IOException {

@@ -42,7 +42,6 @@ import com.ibm.wala.ssa.IR;
 import com.ibm.wala.ssa.ISSABasicBlock;
 import com.ibm.wala.ssa.SSAInstruction;
 import com.ibm.wala.ssa.SSAInvokeInstruction;
-import com.ibm.wala.types.MethodReference;
 import com.ibm.wala.types.TypeName;
 import com.ibm.wala.util.WalaException;
 import com.ibm.wala.util.collections.Iterator2Iterable;
@@ -79,14 +78,15 @@ public class Analyzer {
 
 		specification.setEntryPointCGNodes();
 		LinkedList<CGNode> entryCGNodes = specification.getEntryPointCGNodes();	
-
+		
 		AnalysisEnvironment env = AnalysisEnvironment.getAnalysisEnvironment();
-		for(CGNode entryNode : entryCGNodes) {
+		for(CGNode entryNode : entryCGNodes) {;
+			System.out.println("Starting entry node " + entryNode.getMethod().toString());
 			ICostResult results = analyzeNode(entryNode);
 			CostResultMemory memRes = (CostResultMemory)results;				
-			System.out.println("Worst case allocation for " + entryNode.getMethod().toString() + ":" + results.getCostScalar());
+			System.out.println("Worst case allocation for " + entryNode.getMethod().toString() + ":\t" + results.getCostScalar());
 			for(Entry<TypeName, Integer> i : memRes.aggregatedCountByTypename.entrySet()) {
-				System.out.println("\t TYPE_NAME " + i.getKey().toString() + " COUNT " + i.getValue());
+				System.out.println("\t TYPE_NAME\t" + i.getKey().toString() + "\tCOUNT " + i.getValue());
 			}
 		}
 		
@@ -327,30 +327,24 @@ public class Analyzer {
 
 		if(instruction instanceof SSAInvokeInstruction) {
 			SSAInvokeInstruction inst = (SSAInvokeInstruction)instruction;
-			if(inst.isDispatch()) {	// invokevirtual
-				CallSiteReference callSiteRef = inst.getCallSite();
-				Set<CGNode> possibleTargets = environment.getCallGraph().getPossibleTargets(node, callSiteRef);
-				ICostResult maximumResult = null;
-				ICostResult tempResult = null;
-				CallStringContext h = (CallStringContext)node.getContext();
-				CallString m = (CallString)h.get(CallStringContextSelector.CALL_STRING);
-			
-				for(CGNode target : Iterator2Iterable.make(possibleTargets.iterator())) {
-					if (doesContainMethod(m.getMethods(), target.getMethod())) {
-						System.out.println("SKIPPING" + target.toString() + " on " + target.getMethod().toString());
-						continue;
-					}
-					tempResult = analyzeNode(target);
-					if(maximumResult == null || tempResult.getCostScalar() > maximumResult.getCostScalar())
-						maximumResult = tempResult;
+			CallSiteReference callSiteRef = inst.getCallSite();
+			Set<CGNode> possibleTargets = environment.getCallGraph().getPossibleTargets(node, callSiteRef);
+			ICostResult maximumResult = null;
+			ICostResult tempResult = null;
+			CallStringContext h = (CallStringContext)node.getContext();
+			CallString m = (CallString)h.get(CallStringContextSelector.CALL_STRING);
+		
+			for(CGNode target : Iterator2Iterable.make(possibleTargets.iterator())) {
+				if (doesContainMethod(m.getMethods(), target.getMethod())) { // Use of context-sensitivity to eliminate recursion
+					continue;
 				}
-				return maximumResult;
-			} else { // invokestatic or invokespecial
-				MethodReference targetRef = inst.getDeclaredTarget();
-				Set<CGNode> targets = environment.getCallGraph().getNodes(targetRef);
-				CGNode target = targets.iterator().next();
-				return analyzeNode(target);
+				tempResult = analyzeNode(target);
+				if(maximumResult == null || tempResult.getCostScalar() > maximumResult.getCostScalar())
+					maximumResult = tempResult;
 			}
+			
+			return maximumResult;
+			
 		} else if(costComputer.isInstructionInteresting(instruction)) {
 			costForInstruction = costComputer.getCostForInstructionInBlock(instruction, block, node);
 		}

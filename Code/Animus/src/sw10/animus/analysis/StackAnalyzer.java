@@ -28,7 +28,7 @@ public class StackAnalyzer {
 	public void analyze() {	
 		AnalysisSpecification specification = AnalysisSpecification.getAnalysisSpecification();
 		LinkedList<CGNode> entryNodes = specification.getEntryPointCGNodes();
-		
+
 		for(CGNode entryNode : entryNodes) {
 			dist(entryNode);
 		}
@@ -49,13 +49,6 @@ public class StackAnalyzer {
 					continue;
 				}
 				memCost = (CostResultMemory)analysisResults.getResultsForNode(node);
-				if (memCost == null) {
-					memCost = new CostResultMemory();
-					memCost.setAccumStackCost(0);
-					memCost.setMaxLocals(0);
-					memCost.setMaxStackHeight(0);
-					analysisResults.saveResultForNode(node, memCost);
-				}
 				cost = dist(successor) + memCost.getStackCost();
 				if(cost > max) {
 					maxSuccessor = successor;
@@ -68,15 +61,7 @@ public class StackAnalyzer {
 			return max;
 		} else {
 			memCost = (CostResultMemory)analysisResults.getResultsForNode(node);
-			if (memCost == null) {
-				memCost = new CostResultMemory();
-				memCost.setAccumStackCost(0);
-				memCost.setMaxLocals(0);
-				memCost.setMaxStackHeight(0);
-				analysisResults.saveResultForNode(node, memCost);
-			} else {
-				memCost.setAccumStackCost(memCost.getStackCost());
-			}
+			memCost.setAccumStackCost(memCost.getStackCost());
 			return memCost.getStackCost();
 		}
 	}

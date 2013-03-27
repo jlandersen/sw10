@@ -1,5 +1,9 @@
 package sw10.animus.analysis;
 
+import java.util.List;
+
+import com.ibm.wala.ipa.callgraph.CGNode;
+
 public interface ICostResult {
 	public enum ResultType {
 		COMPLETE_NODE_RESULT,
@@ -11,4 +15,5 @@ public interface ICostResult {
 	void resetCostScalar();
 	ICostResult clone();
 	ICostResult cloneTemporaryResult();
+	List<CGNode> getWorstCaseReferencedMethods();
 }

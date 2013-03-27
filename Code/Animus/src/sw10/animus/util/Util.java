@@ -7,12 +7,17 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
 
+import javax.swing.text.html.HTMLDocument.HTMLReader.SpecialAction;
+
+import sw10.animus.program.AnalysisSpecification;
+
 import com.ibm.wala.cfg.ControlFlowGraph;
 import com.ibm.wala.cfg.IBasicBlock;
 import com.ibm.wala.classLoader.IClass;
 import com.ibm.wala.classLoader.Language;
 import com.ibm.wala.examples.properties.WalaExamplesProperties;
 import com.ibm.wala.ipa.callgraph.CGNode;
+import com.ibm.wala.ipa.callgraph.CallGraph;
 import com.ibm.wala.ipa.cha.ClassHierarchy;
 import com.ibm.wala.ipa.cha.IClassHierarchy;
 import com.ibm.wala.properties.WalaProperties;
@@ -30,7 +35,9 @@ import com.ibm.wala.util.WalaException;
 import com.ibm.wala.util.collections.HashMapFactory;
 import com.ibm.wala.util.collections.Pair;
 import com.ibm.wala.util.debug.Assertions;
+import com.ibm.wala.util.graph.Graph;
 import com.ibm.wala.util.graph.labeled.SlowSparseNumberedLabeledGraph;
+import com.ibm.wala.util.graph.traverse.BFSIterator;
 import com.ibm.wala.viz.DotUtil;
 import com.ibm.wala.viz.NodeDecorator;
 
@@ -91,6 +98,39 @@ public class Util {
 		}
 
 		return Pair.make(g, edgeLabels);
+	}
+	
+	public static void CreatePDFCG(CallGraph cg, ClassHierarchy cha) throws WalaException {
+		AnalysisSpecification spec = AnalysisSpecification.getAnalysisSpecification();
+		
+		Properties wp = WalaProperties.loadProperties();
+	    wp.putAll(WalaExamplesProperties.loadProperties());
+	    String outputDir = spec.getOutputDir() + File.separatorChar;
+
+		String psFile = outputDir + "callGraph.pdf";		
+		String dotFile = outputDir + "callGraph.dt";
+		
+	    String dotExe = wp.getProperty(WalaExamplesProperties.DOT_EXE);
+	    String gvExe = wp.getProperty(WalaExamplesProperties.PDFVIEW_EXE);
+	    
+	    final HashMap<CGNode, String> labelMap = HashMapFactory.make();
+	    
+	    BFSIterator<CGNode> cgIt = new BFSIterator<CGNode>(cg);
+	    while(cgIt.hasNext()) {
+	    	CGNode node = cgIt.next();
+	    	
+	        StringBuilder label = new StringBuilder();
+	        label.append(node.toString() + "\n" + node.getGraphNodeId());
+	        
+	        labelMap.put(node, label.toString());
+	      
+	    }
+	    NodeDecorator labels = new NodeDecorator() {
+	        public String getLabel(Object o) {
+	            return labelMap.get(o);
+	        }
+	    };
+		DotUtil.dotify(cg, labels, dotFile, psFile, dotExe); 
 	}
 
 	public static void CreatePDFCFG(SlowSparseNumberedLabeledGraph<ISSABasicBlock, String> cfg, ClassHierarchy cha, CGNode node) throws WalaException {

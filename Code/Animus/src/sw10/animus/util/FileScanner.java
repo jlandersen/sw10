@@ -36,7 +36,7 @@ public class FileScanner {
 		fileName = fileName.substring(0, fileName.indexOf('.'));
 		String fullPath = "";
 		for(String path : mapping.keySet()) {
-			if(path.contains(fileName)) {
+			if(path.endsWith(fileName)) {
 				fullPath = path + ".java";
 				break;
 			}

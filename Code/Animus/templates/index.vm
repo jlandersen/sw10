@@ -13,11 +13,13 @@
     <script src="$syntaxcoreJS"></script>
     <script src="$syntaxbrushJS"></script>
     <script src="http://code.jquery.com/jquery.js"></script>
+    <script src="http://d3js.org/d3.v3.min.js"></script>
     <script src="$fancyboxJS"></script>
     <script src="$bootstrapJS"></script>
     <script src="$arborJS"></script>
     <!-- User-defined Scripts -->
-   	<script src="$visualizationJS"></script>
+    <script src="$JSONJS"></script>
+   	<script src="$graphJS"></script>
     <script src="$scriptsJS"></script>
   </head>
   <body>
@@ -60,6 +62,8 @@
           $sidemenuJVMStack
         </ul>
       </div>
+      <!-- slider -->
+      <div id="slideUpDownMenu">fsdfsdf</div>
       <!-- Content -->
       <div class="hero-unit" id="content">
         <div id="summary">
@@ -81,7 +85,7 @@
       		</table>
         </div>
         <div id="callgraph">
-        	<canvas id="viewport" width="800" height="600"></canvas>
+        	<div id="graph"></div>
         </div>
         <div id="allocations">$code</div>
         <div id="JVMStack">$JVMStack</div>
