@@ -8,12 +8,26 @@ $(function() {
   _this.clicks = clicks;
   _this.timer = timer;
 
+
+  /* Code Viewer */  
+  $(".codeViewer").fancybox({
+    fitToView : false,
+    width   : '95%',
+    height    : '95%',
+    autoSize  : false,
+    closeClick  : false,
+    openEffect  : 'fade',
+    closeEffect : 'elastic'
+  });
+
   var timeout_callback = function(d) {
     if(_this.clicks == 1) {
       toggle(d); 
       update(d); 
     } else {
-      
+      var selector = '#anchor-' + d.guid;
+      console.log(selector)
+      $(selector).click();
     }
     _this.clicks = 0;
     _this.timer = null;
@@ -88,8 +102,7 @@ $(function() {
         .attr("dy", "-1.3em")
         .attr("text-anchor", function(d) { return d.children || d._children ? "end" : "start"; })
         .text(function(d) { return d.name; })
-        .style("fill-opacity", 1e-6)
-        .style('stroke', function(d) { return d.color });
+        .style("fill-opacity", 1e-6);
 
     // Transition nodes to their new position.
     var nodeUpdate = node.transition()
@@ -102,7 +115,6 @@ $(function() {
 
     nodeUpdate.select("text")
         .style("fill-opacity", 1)
-        .style('stroke', function(d) { return d.color });
 
     // Transition exiting nodes to the parent's new position.
     var nodeExit = node.exit().transition()
@@ -115,7 +127,6 @@ $(function() {
 
     nodeExit.select("text")
         .style("fill-opacity", 1e-6)
-        .style('stroke', function(d) { return d.color });
 
     // Update the links…
     var link = vis.selectAll("path.link")

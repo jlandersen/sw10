@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import com.ibm.wala.ipa.callgraph.CGNode;
 import com.ibm.wala.types.TypeName;
@@ -23,7 +24,7 @@ public class CostResultMemory implements ICostResult {
 	public ArrayList<CGNode> worstcaseReferencesMethods;
 	public ICostResult.ResultType resultType;
 	public CGNode nodeForResult;
-	
+
 	public CostResultMemory() {
 		this.allocationCost = 0;
 		this.stackCost = 0;

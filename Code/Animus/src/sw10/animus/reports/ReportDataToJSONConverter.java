@@ -36,6 +36,12 @@ public class ReportDataToJSONConverter {
 		}
 		return finalConstructedModel;
 	}
+		
+	public String convertToJSONString(CallGraphNodeModel model) {
+		Gson gson = new Gson();
+		String json = gson.toJson(model);
+		return json.replace(",\"children\":[]", "");
+	}
 	
 	public Map<CGNode, String> getCreatedGuidsForCGNodes() {
 		return guidByNode;
@@ -62,6 +68,7 @@ public class ReportDataToJSONConverter {
 			CallGraphNodeModel modelForNode = new CallGraphNodeModel();
 			modelForNode.name = node.getMethod().getSignature();
 			modelForNode.color = "#FFFFFF";
+			modelForNode.guid = guidByNode.get(node);
 			ICostResult resultsForNode = results.getResultsForNode(node);
 			List<CGNode> referencedMethods = resultsForNode.getWorstCaseReferencedMethods();
 			modelForNode.children = new CallGraphNodeModel[referencedMethods.size()];

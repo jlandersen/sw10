@@ -223,7 +223,8 @@ public class CostComputerMemory implements ICostComputer<CostResultMemory> {
 		if(isEntryPointCGNode) {
 			analysisResults.addReportData(sourceFilePath, lines, cgNode, results);
 		}
-		else if (cgNode.getMethod().getDeclaringClass().getClassLoader().getName().toString().equals("Application")) {
+		
+		if (cgNode.getMethod().getDeclaringClass().getClassLoader().getName().toString().equals("Application")) {
 			analysisResults.addNonEntryReportData(sourceFilePath, lines, cgNode);
 		}
 		

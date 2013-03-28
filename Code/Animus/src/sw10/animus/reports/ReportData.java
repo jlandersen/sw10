@@ -23,6 +23,7 @@ public class ReportData {
 	
 	public JavaFileData addNewJavaFileData(String fileName, IClass classOwner) {
 		JavaFileData newJavaFile = new JavaFileData();
+		newJavaFile.setSourceFile(fileName);
 		fileDataByClass.put(classOwner, newJavaFile);
 		return newJavaFile;
 	}

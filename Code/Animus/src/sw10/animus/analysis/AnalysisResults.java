@@ -35,6 +35,10 @@ public class AnalysisResults {
 		return singletonObject;
 	}
 	
+	public ReportData getReportData() {
+		return reportData;
+	}
+	
 	public void saveResultForNode(CGNode node, ICostResult results) {
 		this.nodesProcessed.put(node, results);
 	}

@@ -1,15 +1,14 @@
 package sw10.animus.reports;
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.StringWriter;
-import java.lang.reflect.Member;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -40,8 +39,6 @@ import com.ibm.wala.ssa.SSAInstruction;
 import com.ibm.wala.types.TypeName;
 import com.ibm.wala.util.WalaException;
 import com.ibm.wala.util.collections.HashMapFactory;
-import com.ibm.wala.util.collections.Iterator2Iterable;
-import com.ibm.wala.util.intset.IntIterator;
 import com.ibm.wala.viz.DotUtil;
 import com.ibm.wala.viz.NodeDecorator;
 
@@ -50,11 +47,15 @@ public class ReportGenerator {
 	private AnalysisSpecification specification;
 	private AnalysisEnvironment environment;
 	private AnalysisResults analysisResults;
+	private ReportDataToJSONConverter converter;
+	private ReportData reportData;
 	private JVMModel jvmModel;
 	
 	private final String RESOURCES = "resources";
 	private final String DT = "dt";
 	private final String PDF = "pdf";
+	private final String HTML = "html";
+	private final String JS = "js";
 	private final String INDEX_HTML = "index.html";
 	private final String VISUALIZATION_JS = "visualization.js";
 	private final String CALL_GRAPH = "callGraph";
@@ -63,11 +64,19 @@ public class ReportGenerator {
 	private String RESOURCES_DIR;
 	private String DT_DIR;
 	private String PDF_DIR;
+	private String HTML_DIR;
+	private String JS_DIR;
+	
+	Map<CGNode, String> guidByCGNode;
 	
 	public ReportGenerator() throws IOException {
 		this.specification = AnalysisSpecification.getAnalysisSpecification();
 		this.environment = AnalysisEnvironment.getAnalysisEnvironment();
 		this.analysisResults = AnalysisResults.getAnalysisResults();
+		this.converter = new ReportDataToJSONConverter();
+		this.guidByCGNode = converter.getCreatedGuidsForCGNodes();
+		this.reportData = analysisResults.getReportData();
+		
 		this.jvmModel = specification.getJvmModel();
 		
 		String outputDir = specification.getOutputDir();
@@ -75,6 +84,8 @@ public class ReportGenerator {
 		this.RESOURCES_DIR = outputDir + File.separatorChar + RESOURCES;
 		this.DT_DIR = outputDir + File.separatorChar + RESOURCES + File.separatorChar + DT;
 		this.PDF_DIR = outputDir + File.separatorChar + RESOURCES + File.separatorChar + PDF;
+		this.HTML_DIR = outputDir + File.separatorChar + RESOURCES + File.separatorChar + HTML;
+		this.JS_DIR = outputDir + File.separatorChar + RESOURCES + File.separatorChar + JS;
 	}
 	
 	public void Generate(ArrayList<ReportEntry> reportEntries) throws IOException {
@@ -82,38 +93,115 @@ public class ReportGenerator {
 
 		VelocityEngine ve = new VelocityEngine();
 		ve.init();
-        Template index = ve.getTemplate("templates/index.vm");
+        Template indexTemplate = ve.getTemplate("templates/index.vm");
+        Template codeTemplate = ve.getTemplate("templates/code.vm");
         VelocityContext ctxIndex = new VelocityContext();
+        VelocityContext ctxCode = new VelocityContext();
         
         /* CSS and JS */
         String webDir = new File(".").getCanonicalPath() + "/web/";
-        GenerateCSSIncludes(ctxIndex, webDir);
-        GenerateJSIncludes(ctxIndex, webDir);
+        GenerateCSSIncludesForIndexFile(ctxIndex, webDir);
+        GenerateCSSIncludesForCodeFile(ctxCode, webDir);
+        GenerateJSIncludesForIndexFile(ctxIndex, webDir);
+        GenerateJSIncludesForCodeFile(ctxCode, webDir);
         
         /* Pages */
         GenerateSummary(ctxIndex);
+        GenerateCallGraph(codeTemplate, ctxIndex, ctxCode);
         GenerateDetails(ctxIndex, reportEntries);
-        GenerateJSONForCallGraph();
-        
+               
         try {
-        	writeTemplateToFile(index, ctxIndex, INDEX_HTML);
+        	writeTemplateToFile(indexTemplate, ctxIndex, OUTPUT_DIR + File.separatorChar + INDEX_HTML);
         } catch(IOException e) {
         	System.err.println("Could not generate output file from template, index.vm");
         } 
 	}
 	
-	private void GenerateJSONForCallGraph() {
-		ReportDataToJSONConverter converter = new ReportDataToJSONConverter();
-		converter.createCallGraphJson();
+	private void GenerateCallGraph(Template codeTemplate, VelocityContext ctxIndex, VelocityContext ctxCode) {
+		CallGraphNodeModel model = converter.createCallGraphJson();
 		
+		/* Create json.js file */
+		StringBuilder jsContent = new StringBuilder();
+		String json = converter.convertToJSONString(model);
+		jsContent.append("var dataset = '");
+		jsContent.append(json);
+		jsContent.append("'");
+		writeJSONJSFile(jsContent, JS_DIR + File.separatorChar + "graph.js");
+		
+		StringBuilder anchors = new StringBuilder();
+		
+		CallGraphNodeModel[] entryModels = model.children;
+		int index = 0;
+		for(CGNode cgNode : specification.getEntryPointCGNodes()) {
+			instantiateCodeFileFromTemplate(cgNode, entryModels[index], codeTemplate, ctxCode, anchors);
+			index++;
+		}
+		
+		ctxIndex.put("codeAnchors", anchors.toString());
 	}
 	
-	private void writeTemplateToFile(Template template, Context ctx, String fileName) throws IOException {
+	private void instantiateCodeFileFromTemplate(CGNode cgNode, CallGraphNodeModel model, Template codeTemplate, VelocityContext ctxCode, StringBuilder anchors) {
+		CostResultMemory cost = (CostResultMemory)analysisResults.getResultsForNode(cgNode);
+		List<CGNode> refNodes = cost.getWorstCaseReferencedMethods();
+		
+		JavaFileData data = reportData.getJavaFileDataForCGNode(cgNode);
+				
+		VelocityContext ctxCodeClone = (VelocityContext)ctxCode.clone();
+		if(data != null) {
+			StringBuilder lines = new StringBuilder();
+			Iterator<Integer> linesIterator = data.getLineNumbersForCGNode(cgNode).iterator();
+			while(linesIterator.hasNext()) {
+				lines.append(linesIterator.next());
+				if(linesIterator.hasNext())
+					lines.append(", ");
+			}
+			
+			BufferedReader fileJavaReader = null;
+			try {
+				fileJavaReader = new BufferedReader(new FileReader(data.getSourceFile()));
+				StringBuilder code = new StringBuilder();
+				code.append("<pre class=\"brush: java; highlight: [" + lines + "]\">\n&nbsp;");
+				
+				String line;
+		        while ((line = fileJavaReader.readLine()) != null) {
+		        	code.append(line + "\n");
+		        }
+		        code.append("</pre>");
+		        code.append("<script type=\"text/javascript\">SyntaxHighlighter.all()</script>");
+		        
+		        ctxCode.put("code", code.toString());
+		        writeTemplateToFile(codeTemplate, ctxCode, HTML_DIR + File.separatorChar + guidByCGNode.get(cgNode) + ".html");  
+			} catch (FileNotFoundException e) {
+				e.printStackTrace();
+			} catch(IOException e) {
+				e.printStackTrace();
+			} finally {
+				try {
+					fileJavaReader.close();
+				} catch (IOException e) {
+					System.err.println("Could not close filereader");
+				}
+			}
+			
+			String guid = model.guid;
+			String href = HTML_DIR + File.separatorChar + guid + ".html";
+			anchors.append("<a id=\"anchor-" + guid + "\" data-fancybox-type=\"iframe\" class=\"codeViewer\" href=\"" + href + "\" />");
+		}
+		
+		int index = 0;
+		CallGraphNodeModel children[] = model.children;
+		for(CGNode refNode : refNodes) {			
+			instantiateCodeFileFromTemplate(refNode, children[index], codeTemplate, ctxCodeClone, anchors);
+			index++;
+		}
+	}
+	
+	private void writeTemplateToFile(Template template, Context ctx, String fullPath) throws IOException {
 		StringWriter writer = new StringWriter();
 		template.merge(ctx, writer);
         String filecontent = writer.toString();
 
-        File htmlFile = new File(OUTPUT_DIR + File.separatorChar + fileName);
+        File htmlFile = new File(fullPath);
         if(!htmlFile.exists()){
         	htmlFile.createNewFile();
         }
@@ -123,23 +211,54 @@ public class ReportGenerator {
         fw.close();
 	}
 	
-	private void GenerateCSSIncludes(Context ctxIndex, String webDir) {
+	private void writeJSONJSFile(StringBuilder content, String fullPath) {
+		FileWriter fw = null;
+		try {
+			File jsonFile = new File(fullPath);
+	        if(!jsonFile.exists()){
+	        	jsonFile.createNewFile();
+	        }
+
+	        fw = new FileWriter(jsonFile);
+	        fw.write(content.toString());
+		} catch(IOException e) {
+			System.err.println(e.getMessage());
+		} finally {
+			try {
+				fw.close();
+			} catch (IOException e) {
+				System.err.println("Could not close filewriter. " + e.getMessage());
+			}
+		}
+	}
+	
+	private void GenerateCSSIncludesForIndexFile(Context ctxIndex, String webDir) {
 		ctxIndex.put("bootstrapCSS", webDir + "bootstrap/css/bootstrap.css");
 		ctxIndex.put("fancyboxCSS", webDir + "fancyapps-fancyBox-0ffc358/source/jquery.fancybox.css");
 		ctxIndex.put("syntaxCSS", webDir + "syntaxhighlighter_3.0.83/styles/shCoreDefault.css");
 		ctxIndex.put("stylesCSS", webDir + "styles.css");
 	}
+	
+	private void GenerateCSSIncludesForCodeFile(Context ctxCode, String webDir) {
+		ctxCode.put("syntaxCSS", webDir + "syntaxhighlighter_3.0.83/styles/shCoreDefault.css");
+	}
     
-	private void GenerateJSIncludes(Context ctxIndex, String webDir) {
+	private void GenerateJSIncludesForIndexFile(Context ctxIndex, String webDir) {
 		ctxIndex.put("syntaxcoreJS", webDir + "syntaxhighlighter_3.0.83/scripts/shCore.js");
 		ctxIndex.put("syntaxbrushJS", webDir + "syntaxhighlighter_3.0.83/scripts/shBrushJava.js");
 		ctxIndex.put("fancyboxJS", webDir + "fancyapps-fancyBox-0ffc358/source/jquery.fancybox.pack.js");
 		ctxIndex.put("bootstrapJS", webDir + "bootstrap/js/bootstrap.js");
-		ctxIndex.put("arborJS", webDir + "arbor-v0.92/lib/arbor.js");
 		ctxIndex.put("JSONJS", webDir + "sample.js");
+		ctxIndex.put("graphDataset", JS_DIR + File.separatorChar + "graph.js");
 		ctxIndex.put("graphJS", webDir + "graph.js");
 		ctxIndex.put("scriptsJS", webDir + "scripts.js");
 	}
+	
+	private void GenerateJSIncludesForCodeFile(Context ctxCode, String webDir) {
+		ctxCode.put("syntaxcoreJS", webDir + "syntaxhighlighter_3.0.83/scripts/shCore.js");
+		ctxCode.put("syntaxbrushJS", webDir + "syntaxhighlighter_3.0.83/scripts/shBrushJava.js");
+	}
+	
 	
 	private void GenerateSummary(VelocityContext ctxIndex) {
 		ctxIndex.put("application", "name");
@@ -164,14 +283,10 @@ public class ReportGenerator {
 				CGNode cgNode = entry.getKey();
 				ICostResult cost = entry.getValue();
 				Set<Integer> lineNumbers = reportEntry.getLineNumbers(cgNode);
-				String packages = reportEntry.getPackage();
-				if(packages.equals(""))
-					packages = "default";
-								
 				IMethod method = cgNode.getMethod();				
-				String guid = java.util.UUID.randomUUID().toString();
-				
+
 				CostResultMemory memCost = (CostResultMemory)cost;
+				String guid = guidByCGNode.get(cgNode);
 				
 				/* Control-Flow Graph */
 				try {
@@ -437,6 +552,8 @@ public class ReportGenerator {
 				new File(RESOURCES_DIR).mkdir();
 				new File(DT_DIR).mkdir();
 				new File(PDF_DIR).mkdir();
+				new File(HTML_DIR).mkdir();
+				new File(JS_DIR).mkdir();
 			} catch (SecurityException e) {
 				System.err.println("Could not create output directories");
 				e.printStackTrace();
@@ -444,6 +561,8 @@ public class ReportGenerator {
 		} else {	
 		    File dtDir = new File(DT_DIR);
 		    File pdfDir = new File(PDF_DIR);
+		    File htmlDir = new File(HTML_DIR);
+		    File jsDir = new File(JS_DIR);
 		    
 		    File[] files = dtDir.listFiles();
 		    for(File file : files) {
@@ -453,7 +572,14 @@ public class ReportGenerator {
 		    for(File file : files) {
 		    	file.delete();
 		    }
-		    
+		    files = htmlDir.listFiles();
+		    for(File file : files) {
+		    	file.delete();
+		    }
+		    files = jsDir.listFiles();
+		    for(File file : files) {
+		    	file.delete();
+		    }
 		}
 	}
 }

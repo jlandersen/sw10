@@ -26,7 +26,15 @@ public class JavaFileData {
 		this.sourceFile = sourceFile;
 	}
 	
+	public String getSourceFile() {
+		return sourceFile;
+	}
+	
 	public void addLineNumbersForCGNode(CGNode node, Set<Integer> lineNumbers) {
 		this.lineNumbersByNode.put(node, lineNumbers);
+	}
+	
+	public Set<Integer> getLineNumbersForCGNode(CGNode node) {
+		return lineNumbersByNode.get(node);
 	}
 }
