@@ -45,7 +45,6 @@ import com.ibm.wala.viz.NodeDecorator;
 public class ReportGenerator {
 
 	private AnalysisSpecification specification;
-	private AnalysisEnvironment environment;
 	private AnalysisResults analysisResults;
 	private ReportDataToJSONConverter converter;
 	private ReportData reportData;
@@ -57,7 +56,6 @@ public class ReportGenerator {
 	private final String HTML = "html";
 	private final String JS = "js";
 	private final String INDEX_HTML = "index.html";
-	private final String VISUALIZATION_JS = "visualization.js";
 	private final String CALL_GRAPH = "callGraph";
 	
 	private String OUTPUT_DIR;
@@ -71,7 +69,6 @@ public class ReportGenerator {
 	
 	public ReportGenerator() throws IOException {
 		this.specification = AnalysisSpecification.getAnalysisSpecification();
-		this.environment = AnalysisEnvironment.getAnalysisEnvironment();
 		this.analysisResults = AnalysisResults.getAnalysisResults();
 		this.converter = new ReportDataToJSONConverter();
 		this.guidByCGNode = converter.getCreatedGuidsForCGNodes();
@@ -131,10 +128,8 @@ public class ReportGenerator {
 		StringBuilder anchors = new StringBuilder();
 		
 		CallGraphNodeModel[] entryModels = model.children;
-		int index = 0;
-		for(CGNode cgNode : specification.getEntryPointCGNodes()) {
-			instantiateCodeFileFromTemplate(cgNode, entryModels[index], codeTemplate, ctxCode, anchors);
-			index++;
+		for(CallGraphNodeModel entryModel : entryModels) {
+			instantiateCodeFileFromTemplate(entryModel.node, entryModel, codeTemplate, ctxCode, anchors);
 		}
 		
 		ctxIndex.put("codeAnchors", anchors.toString());
@@ -257,13 +252,17 @@ public class ReportGenerator {
 	private void GenerateJSIncludesForCodeFile(Context ctxCode, String webDir) {
 		ctxCode.put("syntaxcoreJS", webDir + "syntaxhighlighter_3.0.83/scripts/shCore.js");
 		ctxCode.put("syntaxbrushJS", webDir + "syntaxhighlighter_3.0.83/scripts/shBrushJava.js");
-	}
-	
+	}	
 	
 	private void GenerateSummary(VelocityContext ctxIndex) {
-		ctxIndex.put("application", "name");
-        ctxIndex.put("classes", "number");
-        ctxIndex.put("methods", "number");
+		ctxIndex.put("Mainclass", specification.getMainClass());
+		ctxIndex.put("Application", specification.getApplicationJar());
+		ctxIndex.put("JarIncludesStdLibraries", specification.getJarIncludesStdLibraries());
+		ctxIndex.put("JVMModel", specification.getJvmModelString());
+		ctxIndex.put("OutputDir", specification.getOutputDir());
+		ctxIndex.put("SourceFilesRootDir", specification.getSourceFilesRootDir());
+		ctxIndex.put("Analysis", specification.getTypeOfAnalysisPerformed());
+		ctxIndex.put("Methods", specification.getEntryPointSignatures().length);
 	}
 	
 	private void GenerateDetails(VelocityContext ctxIndex, ArrayList<ReportEntry> reportEntries) throws IOException {

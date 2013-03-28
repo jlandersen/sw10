@@ -69,6 +69,7 @@ public class Program {
 			printCommandLineUsage(nulls);		
 		} else {
 			specification.setJvmModel(JVMModel.makeFromJson(jvmModel));
+			specification.setJvmModelString(jvmModel);
 			specification.setApplicationJar(application);
 			specification.setJarIncludesStdLibraries(jarIncludesStdLibraries.equalsIgnoreCase("true") ? true : false);
 			specification.setSourceFilesRootDir(sourceFilesRootDir);

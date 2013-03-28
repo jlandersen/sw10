@@ -22,6 +22,7 @@ public class AnalysisSpecification {
 	private AnalysisType analysisType;
 	private boolean generateAnalysisReports;
 	private JVMModel jvmModel;
+	private String jvmModelString;
 	
 	private LinkedList<CGNode> entryPointCGNodes;
 	
@@ -108,6 +109,14 @@ public class AnalysisSpecification {
 
 	public void setJvmModel(JVMModel jvmModel) {
 		this.jvmModel = jvmModel;
+	}
+	
+	public void setJvmModelString(String jvmModel) {
+		this.jvmModelString = jvmModel;
+	}
+	
+	public String getJvmModelString() {
+		return jvmModelString;
 	}
 	
 	public LinkedList<CGNode> getEntryPointCGNodes() {

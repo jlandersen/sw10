@@ -34,8 +34,8 @@ $(function() {
   }
 
   var m = [20, 120, 20, 120],
-    w = 1280 - m[1] - m[3],
-    h = 800 - m[0] - m[2],
+    w = 2500 - m[1] - m[3],
+    h = 900 - m[0] - m[2],
     i = 0,
     root;
 
@@ -46,10 +46,14 @@ $(function() {
       .projection(function(d) { return [d.y, d.x]; });
 
   var vis = d3.select("#graph").append("svg:svg")
-      .attr("width", w + m[1] + m[3])
-      .attr("height", h + m[0] + m[2])
-      .append("svg:g")
-      .attr("transform", "translate(" + m[3] + "," + m[0] + ")");
+    .attr("width", w + m[1] + m[3])
+    .attr("height", h + m[0] + m[2])
+    .append("svg:g")
+    .attr("transform", "translate(" + m[3] + "," + m[0] + ")");
+
+  var div = d3.select("body").append("div")
+    .attr("class", "tooltip")         
+    .style("opacity", 0);
 
   json = JSON.parse(dataset)
   root = json;
@@ -91,18 +95,39 @@ $(function() {
             _this.timer = setTimeout(timeout_callback, 200, d);
           }
           _this.clicks++;
+        })
+        .on("mouseover", function(d) {
+          if(typeof(d.signature) !== "undefined" && d.signature !== null){
+            div.transition()        
+              .duration(200)      
+              .style("opacity", .7);      
+            div.html(d.signature + "<br/>" + "cost: " + d.cost)  
+              .style("left", (d3.event.pageX + 10) + "px")     
+              .style("top", (d3.event.pageY - 40) + "px");
+            }
+          })
+        .on("mouseout", function(d) {       
+          div.transition()        
+          .duration(500)      
+          .style("opacity", 0)
         });
 
     nodeEnter.append("svg:circle")
-        .attr("r", 10)
-        .style("fill", function(d) { return d._children ? "#3a87ad" : "#fff"; });
+      .attr("r", 10)
+      .style('stroke', function(d) { return d.color})
+      .style("fill", function(d) { return d._children ? d.color : "#FFFFFF"; });
 
     nodeEnter.append("svg:text")
-        .attr("x", function(d) { return d.children || d._children ? -10 : 10; })
-        .attr("dy", "-1.3em")
-        .attr("text-anchor", function(d) { return d.children || d._children ? "end" : "start"; })
-        .text(function(d) { return d.name; })
-        .style("fill-opacity", 1e-6);
+      .attr("x", function(d) { return d.children || d._children ? -10 : 10; })
+      .attr("dy", "-1.3em")
+      .attr("text-anchor", function(d) { return d.children || d._children ? "end" : "start"; })
+      .text(function(d) { return d.name; })
+      .style("fill-opacity", 1e-6);
+
+    nodeEnter.append("svg:text")
+      .attr("dx", "-4px")
+      .attr("dy", "5px")
+      .text(function(d) { return d.cost > 0 ? "C" : ""})
 
     // Transition nodes to their new position.
     var nodeUpdate = node.transition()
@@ -111,7 +136,8 @@ $(function() {
 
     nodeUpdate.select("circle")
         .attr("r", 10)
-        .style("fill", function(d) { return d._children ? "#3a87ad" : "#fff"; });
+        .style('stroke', function(d) { return d.color})
+        .style("fill", function(d) { return d._children ? d.color : "#FFFFFF"; });
 
     nodeUpdate.select("text")
         .style("fill-opacity", 1)

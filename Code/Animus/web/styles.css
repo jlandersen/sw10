@@ -1,12 +1,11 @@
 .node circle {
   cursor: pointer;
   fill: #fff;
-  stroke: #000;
-  stroke-width: 1.0px;
+  stroke-width: 2.0px;
 }
 
 .node text {
-  font-size: 11px;
+  font-size: 12px;
 }
 
 path.link {
@@ -15,10 +14,18 @@ path.link {
   stroke-width: 1.5px;
 }
 
-#options {
-  border: 1px solid;
-  width: 100px;
-  height: 50px;
+div.tooltip {   
+  position: absolute;           
+  text-align: center;           
+  width: auto;                  
+  height: 28px;                 
+  padding: 5px;             
+  font: 12px sans-serif;        
+  background: #000;   
+  border: 0px;
+  border-radius: 8px;           
+  pointer-events: none;
+  color: #FFFFFF;
 }
 
 #code-anchors {
@@ -45,6 +52,7 @@ p {
 	float: left;
 	left: 0px;
 	width: 0%;
+  font-size: 16px;
 	overflow: hidden;
 	white-space: nowrap;
 }

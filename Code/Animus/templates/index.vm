@@ -68,16 +68,40 @@
         	<table class="table table-bordered table-striped">
         		<tbody>
         			<tr>
-        				<td>Application</td>
-        				<td>$application</td>
+        				<td><b>Property</b></td>
+        				<td><b>Value</b></td>
+        			</tr>
+        			<tr>
+        				<td>Main Class</td>
+        				<td>$Mainclass</td>
+        			</tr>
+        			<tr>
+        				<td>Application Jar</td>
+        				<td>$Application</td>
         			</tr>
       				<tr>
-      					<td># Classes</td>
-      					<td>$classes</td>
+      					<td>JVM Model</td>
+      					<td>$JVMModel</td>
       				</tr>
       				<tr>
-      					<td># Methods</td>
-      					<td>$methods</td>
+      					<td>Jar Includes STD Libraries </td>
+      					<td>$JarIncludesStdLibraries</td>
+      				</tr>
+      				<tr>
+      					<td>Output Directory</td>
+      					<td>$OutputDir</td>
+      				</tr>
+      				<tr>
+      					<td>Source Files Root Directory</td>
+      					<td>$SourceFilesRootDir</td>
+      				</tr>
+      				<tr>
+      					<td>Analysis Type</td>
+      					<td>$Analysis</td>
+      				</tr>
+      				<tr>
+      					<td>Analyzed Methods</td>
+      					<td>$Methods</td>
       				</tr>
       			</tbody>
       		</table>
