@@ -11,6 +11,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
@@ -19,6 +20,8 @@ import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.context.Context;
+import org.apache.velocity.runtime.RuntimeConstants;
+import org.apache.velocity.runtime.resource.loader.ClasspathResourceLoader;
 
 import sw10.animus.analysis.AnalysisResults;
 import sw10.animus.analysis.CostResultMemory;
@@ -89,9 +92,15 @@ public class ReportGenerator {
 		createOutputDirectories();
 
 		VelocityEngine ve = new VelocityEngine();
+		ve.setProperty(RuntimeConstants.RESOURCE_LOADER, "classpath");
+		ve.setProperty("classpath.resource.loader.class", ClasspathResourceLoader.class.getName());
 		ve.init();
-        Template indexTemplate = ve.getTemplate("templates/index.vm");
-        Template codeTemplate = ve.getTemplate("templates/code.vm");
+		
+		Template indexTemplate = null;
+		Template codeTemplate = null;
+		indexTemplate = ve.getTemplate("templates/index.vm");
+	    codeTemplate = ve.getTemplate("templates/code.vm");
+        
         VelocityContext ctxIndex = new VelocityContext();
         VelocityContext ctxCode = new VelocityContext();
         
@@ -159,6 +168,8 @@ public class ReportGenerator {
 				
 				String line;
 		        while ((line = fileJavaReader.readLine()) != null) {
+		        	line = line.replace("<", "&#60;");
+		        	line = line.replace(">", "&#62;");
 		        	code.append(line + "\n");
 		        }
 		        code.append("</pre>");
@@ -348,6 +359,8 @@ public class ReportGenerator {
 				
 				String line;
 		        while ((line = fileJavaReader.readLine()) != null) {
+		        	line = line.replace("<", "&#60;");
+		        	line = line.replace(">", "&#62;");
 		        	code.append(line + "\n");
 		        }
 		        code.append("</pre>");
@@ -376,7 +389,7 @@ public class ReportGenerator {
 				
 				/* Details div */
 				code.append("<div class=\"well\" id=\"det-" + guid + "\" style=\"display:none; position:relative;\">\n");
-				code.append("<h3>" + method.getSignature() + "</h3>");
+				code.append("<div class=\"methodsignaturebox\">" + method.getSignature() + "</div>");
 				code.append("<span class=\"label label-info topRight\">Cost: " + memCost.getCostScalar() + "</span>");
 				
 				if(memCost.countByTypename.size() > 0) {
@@ -419,7 +432,12 @@ public class ReportGenerator {
 						code.append("<td>" + typeName + "</td>");
 						int count = countByTypename.getValue();
 						code.append("<td>" + count + "</td>");
-						int typeSize = jvmModel.getSizeForQualifiedType(typeName);
+						int typeSize = 0;
+						try {
+							typeSize = jvmModel.getSizeForQualifiedType(typeName);
+						} catch (NoSuchElementException e) {
+							typeSize = -1;
+						}
 						code.append("<td>" + count*typeSize + "</td>");
 						code.append("</tr>");
 					}
@@ -440,7 +458,7 @@ public class ReportGenerator {
 					}
 					
 					code.append("<div class=\"well\" style=\"position:relative;\">");
-					code.append("<h3>" + refMethodSignature + "</h3>");
+					code.append("<div class=\"methodsignaturebox\">" + refMethodSignature + "</div>");
 					CostResultMemory refCGNodeCost = (CostResultMemory)analysisResults.getResultsForNode(refCGNode);
 					code.append("<span class=\"label label-info topRight\">Cost: " + refCGNodeCost.getCostScalar() + "</span>");
 					
@@ -460,7 +478,12 @@ public class ReportGenerator {
 							code.append("<td>" + typeName + "</td>");
 							int count = countByTypename.getValue();
 							code.append("<td>" + count + "</td>");
-							int typeSize = jvmModel.getSizeForQualifiedType(typeName);
+							int typeSize = 0;
+							try {
+								typeSize = jvmModel.getSizeForQualifiedType(typeName);
+							} catch (NoSuchElementException e) {
+								typeSize = -1;
+							}
 							code.append("<td>" + count*typeSize + "</td>");
 							code.append("</tr>");
 						}

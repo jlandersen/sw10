@@ -95,7 +95,6 @@ public class ReportDataToJSONConverter {
 			finalModel.children[index++] = model;
 		}
 		Gson gson = new Gson();
-		System.out.println(gson.toJson(finalModel));
 		return finalModel;
 	}
 }
