@@ -13,11 +13,11 @@
     <script src="$syntaxcoreJS"></script>
     <script src="$syntaxbrushJS"></script>
     <script src="http://code.jquery.com/jquery.js"></script>
+    <script src="$smoothScrollJS"></script>
     <script src="http://d3js.org/d3.v3.min.js"></script>
     <script src="$fancyboxJS"></script>
     <script src="$bootstrapJS"></script>
     <!-- User-defined Scripts -->
-    <script src="$JSONJS"></script>
     <script src="$graphDataset"></script>
    	<script src="$graphJS"></script>
     <script src="$scriptsJS"></script>

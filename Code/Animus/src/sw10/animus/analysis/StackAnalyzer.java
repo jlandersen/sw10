@@ -45,7 +45,7 @@ public class StackAnalyzer {
 				CGNode successor = iteratorSuccessors.next();
 				CallStringContext h = (CallStringContext)node.getContext();
 				CallString m = (CallString)h.get(CallStringContextSelector.CALL_STRING);
-				if (Analyzer.doesContainMethod(m.getMethods(), successor.getMethod())) {
+				if (CGNodeAnalyzer.doesContainMethod(m.getMethods(), successor.getMethod())) {
 					continue;
 				}
 				memCost = (CostResultMemory)analysisResults.getResultsForNode(node);

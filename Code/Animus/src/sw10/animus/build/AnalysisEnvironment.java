@@ -11,7 +11,7 @@ public class AnalysisEnvironment {
 	private CallGraph callGraph;
 	
 	private AnalysisEnvironment() {
-	
+
 	}
 	
 	public static synchronized AnalysisEnvironment getAnalysisEnvironment() {
