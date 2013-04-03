@@ -51,16 +51,45 @@ public class CostComputerMemory implements ICostComputer<CostResultMemory> {
 		String typeNameStr = typeName.toString();
 		CostResultMemory cost = new CostResultMemory();
 		if (typeNameStr.startsWith("[")) {
-			IBytecodeMethod method = (IBytecodeMethod)block.getMethod();
-			int lineNumber = method.getLineNumber(block.getFirstInstructionIndex());
-			System.err.println("Arrays not supported");
-			System.err.println("- found on line " + lineNumber + " in " + method.toString());
-			//setCostForNewArrayObject(cost, typeName, typeNameStr, block);	
+			setCostForNewArrayObject(cost, typeName, typeNameStr, block);	
 		} else {
 			setCostForNewObject(cost, typeName, typeNameStr, block);
 		}
 
 		return cost;
+	}
+	
+	private void setCostForNewArrayObject(CostResultMemory cost, TypeName typeName, String typeNameStr, ISSABasicBlock block)  {
+		
+		int allocationCost = 0;
+		Integer arrayLength = tryGetArrayLength(block);
+		IBytecodeMethod method = (IBytecodeMethod)block.getMethod();
+		int lineNumber = method.getLineNumber(block.getFirstInstructionIndex());
+		
+		if(arrayLength == null) {
+			AnnotationExtractor extractor = AnnotationExtractor.getAnnotationExtractor();
+			
+			Map<Integer, Annotation> annotationsForMethod = extractor.getAnnotations(method);
+			
+			if (annotationsForMethod != null && annotationsForMethod.containsKey(lineNumber)) {
+				Annotation annotationForArray = annotationsForMethod.get(lineNumber);
+				arrayLength = Integer.parseInt(annotationForArray.getAnnotationValue());
+			}
+			else
+			{
+				System.err.println(method.toString() + " allocates array without specified memory size annotation expected at line " + lineNumber);
+			}
+		}
+		
+		try {
+			allocationCost = arrayLength * model.getSizeForQualifiedType(typeName);
+			cost.allocationCost = allocationCost;
+			cost.typeNameByNodeId.put(block.getGraphNodeId(), typeName);
+			cost.resultType = ResultType.TEMPORARY_BLOCK_RESULT;
+		}
+		catch(NoSuchElementException e) {
+			System.err.println("model.json does not contain array type: " + typeNameStr + ", at line " + lineNumber + ", found in " + method.getDeclaringClass().getName().toString());
+		}
 	}
 	
 	private Integer tryGetArrayLength(ISSABasicBlock block) {
@@ -72,44 +101,12 @@ public class CostComputerMemory implements ICostComputer<CostResultMemory> {
 		IInstruction prevInst = null;
 		for(IInstruction inst : Iterator2Iterable.make(shrikeBB.iterator())) {
 			if(inst.toString().contains("[")) {
-				System.out.println(inst.toString());
-				System.out.println("\t SIIIIZE " + prevInst.toString());
 				arraySize = extractArrayLength(prevInst.toString());
 			}
 			prevInst = inst;
 		}
 		
 		return arraySize;
-	}
-	
-	private void setCostForNewArrayObject(CostResultMemory cost, TypeName typeName, String typeNameStr, ISSABasicBlock block)  {
-		
-		int allocationCost = 0;
-		Integer arrayLength = tryGetArrayLength(block);
-		
-		if(arrayLength == null) {
-			AnnotationExtractor extractor = AnnotationExtractor.getAnnotationExtractor();
-			
-			IBytecodeMethod method = (IBytecodeMethod)block.getMethod();
-			Map<Integer, Annotation> annotationsForMethod = extractor.getAnnotations(method);
-			
-			int lineNumber = method.getLineNumber(block.getFirstInstructionIndex());
-			
-			if (annotationsForMethod != null && annotationsForMethod.containsKey(lineNumber)) {
-				Annotation annotationForArray = annotationsForMethod.get(lineNumber);
-				allocationCost = Integer.parseInt(annotationForArray.getAnnotationValue());				
-			}
-			else
-			{
-				System.err.println(method.toString() + " allocates array without specified memory size annotation expected at line " + lineNumber);
-			}
-		} else {
-			allocationCost = arrayLength;
-		}
-		
-		cost.allocationCost = allocationCost;
-		cost.typeNameByNodeId.put(block.getGraphNodeId(), typeName);
-		cost.resultType = ResultType.TEMPORARY_BLOCK_RESULT;	
 	}
 	
 	private int extractArrayLength(String instruction) {

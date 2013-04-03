@@ -6,6 +6,6 @@
 	],
 	ApplicationTypeSizes: [
 		{"SimpleObject": 5},
-		{"TrivialObject": 5}
+		{"TrivialObject": 5},
 	]
 }
