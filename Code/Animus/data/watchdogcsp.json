@@ -4,6 +4,7 @@
 		{"java.lang.Object": 1}
 	],
 	ApplicationTypeSizes: [
-		{"sw901e12.csp.core.PacketCore": 8}
+		{"sw901e12.csp.core.PacketCore": 8},
+		{"[I": 4}
 	]
 }

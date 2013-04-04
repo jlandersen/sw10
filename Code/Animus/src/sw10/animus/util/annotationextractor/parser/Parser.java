@@ -45,8 +45,8 @@ public class Parser {
 					
 					if(annotationType.equals("loopbound") || annotationType.equals(("WCA"))) {
 						annotations.put(lineNumber, new Annotation(AnnotationType.LOOPBOUND, annotationValue));				
-					} else if(annotationType.equals("arraysize")) {
-						annotations.put(lineNumber, new Annotation(AnnotationType.ARRAYSIZE, annotationValue));
+					} else if(annotationType.equals("maxsize")) {
+						annotations.put(lineNumber, new Annotation(AnnotationType.MAXSIZE, annotationValue));
 					}
 				}
 			}

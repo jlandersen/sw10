@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 
 import sw10.animus.program.AnalysisSpecification;
 import sw10.animus.util.FileScanner;
@@ -127,8 +126,6 @@ public class AnalysisEnvironmentBuilder {
 		Util.addDefaultBypassLogic(analysisOptions, analysisScope, Util.class.getClassLoader(), classHierarchy);		
 		
 		AnalysisCache cache = new AnalysisCache();
-		//ZeroXCFABuilder builder = new ZeroXCFABuilder(classHierarchy, analysisOptions, cache, null, 
-				//null, ZeroXInstanceKeys.NONE | ZeroXInstanceKeys.SMUSH_MANY);
 		nCFABuilder builder = new nCFABuilder(3, classHierarchy, analysisOptions, cache, null, null);
 
 		return builder.makeCallGraph(analysisOptions);

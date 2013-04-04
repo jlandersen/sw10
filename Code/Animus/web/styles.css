@@ -75,7 +75,19 @@ h3 {
 	position: absolute;
 	top:0;
 	right:0;
-	width:120px;
+  width:10%;
+  overflow:hidden;
+}
+
+
+.methodsignaturebox {
+  font-size:17px;
+  font-weight: bold;
+  width:89.5%;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  display: block;
+  overflow: hidden
 }
 
 #summary,

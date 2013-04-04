@@ -10,7 +10,6 @@ import sw10.animus.analysis.Analyzer;
 import sw10.animus.analysis.CostComputerMemory;
 import sw10.animus.analysis.ICostComputer;
 import sw10.animus.analysis.ICostResult;
-import sw10.animus.build.AnalysisEnvironment;
 import sw10.animus.build.AnalysisEnvironmentBuilder;
 import sw10.animus.build.JVMModel;
 import sw10.animus.program.AnalysisSpecification.AnalysisType;
@@ -24,7 +23,8 @@ public class Program {
 
 	public static void main(String[] args) throws IOException, IllegalArgumentException, CancelException, InstantiationException, IllegalAccessException, WalaException, SecurityException, InvocationTargetException, NoSuchMethodException {		
 		AnalysisSpecification specification = parseCommandLineArguments(args);
-		AnalysisEnvironment environment = AnalysisEnvironmentBuilder.makeFromSpecification(specification);
+		AnalysisEnvironmentBuilder.makeFromSpecification(specification);
+		specification.setEntryPointCGNodes();
 		Analyzer analyzer = Analyzer.makeAnalyzer();
 		analyzer.start((Class<? extends ICostComputer<ICostResult>>)CostComputerMemory.class);
 	}
