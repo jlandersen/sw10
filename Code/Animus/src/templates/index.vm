@@ -1,0 +1,125 @@
+<!DOCTYPE HTML>
+<html>
+  <head>
+    <title>Auto-Generated HTML File</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <!-- Styles -->
+    <link rel="stylesheet" href="$bootstrapCSS">
+    <link rel="stylesheet" href="$fancyboxCSS" />
+    <link rel="stylesheet" href="$syntaxCSS" />
+    <link rel="stylesheet" href="$stylesCSS" />
+    <!-- Scripts -->
+    <script src="$syntaxcoreJS"></script>
+    <script src="$syntaxbrushJS"></script>
+    <script src="http://code.jquery.com/jquery.js"></script>
+    <script src="$smoothScrollJS"></script>
+    <script src="http://d3js.org/d3.v3.min.js"></script>
+    <script src="$fancyboxJS"></script>
+    <script src="$bootstrapJS"></script>
+    <!-- User-defined Scripts -->
+    <script src="$graphDataset"></script>
+   	<script src="$graphJS"></script>
+    <script src="$scriptsJS"></script>
+  </head>
+  <body>
+    <div class="container">
+      <!-- Header -->
+      <div class="container-narrow">
+      <div class="masthead">
+        <ul class="nav nav-pills pull-right">
+          <li class="active"><a href="#">Home</a></li>
+          <li><a href="#">About</a></li>
+          <li><a href="#">Contact</a></li>
+        </ul>
+        <h3 class="muted">Analysis Report</h3>
+      </div>
+      <hr>
+      <!-- Navigation bar -->
+      <div class="navbar">
+        <div class="navbar-inner">
+          <div class="container">
+            <ul class="nav">
+              <li id="menuSummary" class="active"><a href="#" id="btnSummary">Summary</a></li>
+              <li id="menuCallgraph"><a href="#" id="btnCallgraph">Callgraph</a></li>
+              <li id="menuAllocations"><a href="#" id="btnAllocations">Allocations</a></li>
+              <li id="menuJVMStack"><a href="#" id="btnJVMStack">JVM stack</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <!-- Sidemenu allocations -->
+      <div class="hero-unit2" id="sidemenuAllocations"> 
+        Analyzed Methods
+        <ul class="nav nav-list" id="methodsAllocations">
+          $sidemenuAllocations
+        </ul>
+      </div>
+      <!-- Sidemenu JVMStack -->
+      <div class="hero-unit2" id="sidemenuJVMStack"> 
+        Analyzed Methods
+        <ul class="nav nav-list" id="methodsJVMStack">
+          $sidemenuJVMStack
+        </ul>
+      </div>
+      <!-- Content -->
+      <div class="hero-unit" id="content">
+        <div id="summary">
+        	<table class="table table-bordered table-striped">
+        		<tbody>
+        			<tr>
+        				<td><b>Property</b></td>
+        				<td><b>Value</b></td>
+        			</tr>
+        			<tr>
+        				<td>Main Class</td>
+        				<td>$Mainclass</td>
+        			</tr>
+        			<tr>
+        				<td>Application Jar</td>
+        				<td>$Application</td>
+        			</tr>
+      				<tr>
+      					<td>JVM Model</td>
+      					<td>$JVMModel</td>
+      				</tr>
+      				<tr>
+      					<td>Jar Includes STD Libraries </td>
+      					<td>$JarIncludesStdLibraries</td>
+      				</tr>
+      				<tr>
+      					<td>Output Directory</td>
+      					<td>$OutputDir</td>
+      				</tr>
+      				<tr>
+      					<td>Source Files Root Directory</td>
+      					<td>$SourceFilesRootDir</td>
+      				</tr>
+      				<tr>
+      					<td>Analysis Type</td>
+      					<td>$Analysis</td>
+      				</tr>
+      				<tr>
+      					<td>Analyzed Methods</td>
+      					<td>$Methods</td>
+      				</tr>
+      			</tbody>
+      		</table>
+        </div>
+        <div id="callgraph">
+        	<div id="graph"></div>
+        </div>
+        <div id="allocations">$code</div>
+        <div id="JVMStack">$JVMStack</div>
+      </div>
+      <div id="code-anchors">$codeAnchors</div>
+      <!-- Footer -->
+      <hr>
+      <div class="footer" style="float:right;">
+        <p>Mikkel Todberg</p>
+        <p>Jeppe Lund Andersen</p>
+      </div>
+    </div>
+    </div>
+  </body>
+</html>
