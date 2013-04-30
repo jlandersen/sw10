@@ -1,0 +1,11 @@
+Maximize p = 2fs+3f1 + 3f9+5f2 + 5f6 + 5f7 +3f3+2f4+7f5+2f8 + 0ft subject to
+fs = 1
+ft = 1
+fs - f1 = 0
+f1 + f9 - ft - f2 = 0
+f2 + f6 + f7 - f3 - f8 = 0
+f3 - f4 - f5 = 0
+f4 - f6 = 0
+f8 - f9 = 0
+f2 - 20f1 <= 0
+f3 - 50f2<= 0
