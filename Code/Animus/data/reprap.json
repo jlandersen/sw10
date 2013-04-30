@@ -4,6 +4,7 @@
 		{"java.lang.IllegalArgumentException": 1}
 	],
 	ApplicationTypeSizes: [
-		{"org.reprap.Parameter": 1}
+		{"org.reprap.Parameter": 1},
+		{"[C": 40}
 	]
 }
