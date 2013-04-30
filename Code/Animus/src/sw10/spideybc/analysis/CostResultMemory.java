@@ -18,9 +18,11 @@ public class CostResultMemory implements ICostResult {
 	private int maxStackHeight;
 	private int maxLocals;
 	
+	public Map<TypeName, Integer> aggregatedArraySizeByTypeName;
 	public Map<TypeName, Integer> countByTypename;
 	public Map<TypeName, Integer> aggregatedCountByTypename;
 	public Map<Integer, TypeName> typeNameByNodeId;
+	
 	public ArrayList<CGNode> worstcaseReferencesMethods;
 	public ICostResult.ResultType resultType;
 	public CGNode nodeForResult;
@@ -33,6 +35,7 @@ public class CostResultMemory implements ICostResult {
 		this.maxStackHeight = 0;
 		this.maxLocals = 0;
 		
+		aggregatedArraySizeByTypeName = new HashMap<TypeName, Integer>();
 		countByTypename = new HashMap<TypeName, Integer>();
 		aggregatedCountByTypename = new HashMap<TypeName, Integer>();
 		typeNameByNodeId = new HashMap<Integer, TypeName>();

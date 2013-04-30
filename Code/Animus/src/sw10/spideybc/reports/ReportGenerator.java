@@ -395,8 +395,18 @@ public class ReportGenerator {
 						code.append("<td>" + typeName + "</td>");
 						int count = countByTypename.getValue();
 						code.append("<td>" + count + "</td>");
-						int typeSize = jvmModel.getSizeForQualifiedType(typeName);
-						code.append("<td>" + count*typeSize + "</td>");
+						
+						int typeSize;
+
+						if(memCost.aggregatedArraySizeByTypeName.containsKey(typeName)) {
+							typeSize = memCost.aggregatedArraySizeByTypeName.get(typeName);
+						} else {
+							typeSize = jvmModel.getSizeForQualifiedType(typeName);
+						}
+						
+						int totalCost = count*typeSize;
+						
+						code.append("<td>" + totalCost + "</td>");
 						code.append("</tr>");
 					}
 					code.append("</tbody>");
@@ -419,13 +429,18 @@ public class ReportGenerator {
 						code.append("<td>" + typeName + "</td>");
 						int count = countByTypename.getValue();
 						code.append("<td>" + count + "</td>");
-						int typeSize = 0;
-						try {
+
+						int typeSize;
+
+						if(memCost.aggregatedArraySizeByTypeName.containsKey(typeName)) {
+							typeSize = memCost.aggregatedArraySizeByTypeName.get(typeName);
+						} else {
 							typeSize = jvmModel.getSizeForQualifiedType(typeName);
-						} catch (NoSuchElementException e) {
-							typeSize = -1;
 						}
-						code.append("<td>" + count*typeSize + "</td>");
+						
+						int totalCost = count*typeSize;
+						
+						code.append("<td>" + totalCost + "</td>");
 						code.append("</tr>");
 					}
 					code.append("</tbody>");
@@ -466,13 +481,18 @@ public class ReportGenerator {
 							code.append("<td>" + typeName + "</td>");
 							int count = countByTypename.getValue();
 							code.append("<td>" + count + "</td>");
-							int typeSize = 0;
-							try {
+
+							int typeSize;
+
+							if(memCost.aggregatedArraySizeByTypeName.containsKey(typeName)) {
+								typeSize = memCost.aggregatedArraySizeByTypeName.get(typeName);
+							} else {
 								typeSize = jvmModel.getSizeForQualifiedType(typeName);
-							} catch (NoSuchElementException e) {
-								typeSize = -1;
 							}
-							code.append("<td>" + count*typeSize + "</td>");
+							
+							int totalCost = count*typeSize;
+							
+							code.append("<td>" + totalCost + "</td>");
 							code.append("</tr>");
 						}
 						code.append("</tbody>");

@@ -62,20 +62,19 @@ public class SimpleApplication {
 	
 	public static void arrayTest(String[] args) {
 		int x = 50 + 2;
-		int[] array = new int[10];
-		int[] newArr = new int[x]; //@ length = 1241
+		int[] newArr = new int[x]; //@ length = 100
 	}
 	
 	public static int variableSize = 10;
 	public static void main(String[] args) {
 		int length = 1;
-		//arrayTest(args);
+		arrayTest(args);
 		
 		Object obj = null;
 		for(int i = 0; i < 20; i++) { //@ loopbound = 20
 			obj = new Object();
 		}
-		int[] newArray = new int[10];
+		//int[] newArray = new int[10];
 		int[] newArr = new int[length]; //@ length = 1241
 	}
 }

@@ -64,7 +64,12 @@ public class CostComputerMemory implements ICostComputer<CostResultMemory> {
 		Integer arrayLength = null;
 		
 		IBytecodeMethod method = (IBytecodeMethod)block.getMethod();
-		int lineNumber = method.getLineNumber(block.getFirstInstructionIndex());
+		int lineNumber = -1;
+		try {
+			lineNumber = method.getLineNumber(method.getBytecodeIndex(block.getFirstInstructionIndex()));
+		} catch (InvalidClassFileException e1) {
+			e1.printStackTrace();
+		}
 		
 		AnnotationExtractor extractor = AnnotationExtractor.getAnnotationExtractor();
 		Map<Integer, Annotation> annotationsForMethod = extractor.getAnnotations(method);
@@ -85,6 +90,7 @@ public class CostComputerMemory implements ICostComputer<CostResultMemory> {
 			int allocationCost = arrayLength * model.getSizeForQualifiedType(typeName);
 			cost.allocationCost = allocationCost;
 			cost.typeNameByNodeId.put(block.getGraphNodeId(), typeName);
+			cost.aggregatedArraySizeByTypeName.put(typeName, allocationCost);
 			cost.resultType = ResultType.TEMPORARY_BLOCK_RESULT;
 		}
 		catch(NoSuchElementException e) {
@@ -135,6 +141,7 @@ public class CostComputerMemory implements ICostComputer<CostResultMemory> {
 		CostResultMemory results = new CostResultMemory();		
 		if (resultsContext != null) {
 			results.typeNameByNodeId.putAll(resultsContext.typeNameByNodeId);
+			results.aggregatedArraySizeByTypeName.putAll(resultsContext.aggregatedArraySizeByTypeName);
 		}
 		results.allocationCost = lpResults.getObjective().intValue();
 		results.nodeForResult = cgNode;
@@ -249,5 +256,15 @@ public class CostComputerMemory implements ICostComputer<CostResultMemory> {
 	public void addCostAndContext(CostResultMemory fromResult, CostResultMemory toResult) {
 		toResult.allocationCost += fromResult.getCostScalar();
 		toResult.typeNameByNodeId.putAll(fromResult.typeNameByNodeId);
+		
+		/* Merging arrayLengthByArrayTypeName maps and adds matching keys value */
+		for(Entry<TypeName, Integer> fromEntry : fromResult.aggregatedArraySizeByTypeName.entrySet()) {
+			if(toResult.aggregatedArraySizeByTypeName.containsKey(fromEntry.getKey())) {
+				Integer size = toResult.aggregatedArraySizeByTypeName.get(fromEntry.getKey());
+				size += fromEntry.getValue();
+			} else {
+				toResult.aggregatedArraySizeByTypeName.put(fromEntry.getKey(), fromEntry.getValue());
+			}
+		}
 	}
 }
