@@ -12,7 +12,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.NoSuchElementException;
 import java.util.Properties;
 import java.util.Set;
 
@@ -389,6 +388,10 @@ public class ReportGenerator {
 					code.append("<td width=\"20%\"><b>Count</b></td>");
 					code.append("<td width=\"20%\"><b>Cost</b></td>");
 					code.append("</tr>");
+					
+					//memCost.countByTypename.putAll(memCost.arraySizeByTypeName);
+					//memCost.aggregatedCountByTypename.putAll(memCost.aggregatedArraySizeByTypeName);
+					
 					for(Entry<TypeName, Integer> countByTypename : memCost.countByTypename.entrySet()) {
 						code.append("<tr>");
 						TypeName typeName = countByTypename.getKey();
@@ -397,13 +400,12 @@ public class ReportGenerator {
 						code.append("<td>" + count + "</td>");
 						
 						int typeSize;
-
-						if(memCost.aggregatedArraySizeByTypeName.containsKey(typeName)) {
-							typeSize = memCost.aggregatedArraySizeByTypeName.get(typeName);
+						
+						if(memCost.arraySizeByTypeName.containsKey(typeName)) {
+							typeSize = memCost.arraySizeByTypeName.get(typeName) * jvmModel.getSizeForQualifiedType(typeName);
 						} else {
 							typeSize = jvmModel.getSizeForQualifiedType(typeName);
 						}
-						
 						int totalCost = count*typeSize;
 						
 						code.append("<td>" + totalCost + "</td>");
@@ -433,14 +435,12 @@ public class ReportGenerator {
 						int typeSize;
 
 						if(memCost.aggregatedArraySizeByTypeName.containsKey(typeName)) {
-							typeSize = memCost.aggregatedArraySizeByTypeName.get(typeName);
+							typeSize = memCost.aggregatedArraySizeByTypeName.get(typeName) * jvmModel.getSizeForQualifiedType(typeName);
 						} else {
-							typeSize = jvmModel.getSizeForQualifiedType(typeName);
+							typeSize = count * jvmModel.getSizeForQualifiedType(typeName);
 						}
 						
-						int totalCost = count*typeSize;
-						
-						code.append("<td>" + totalCost + "</td>");
+						code.append("<td>" + typeSize + "</td>");
 						code.append("</tr>");
 					}
 					code.append("</tbody>");
@@ -475,7 +475,7 @@ public class ReportGenerator {
 						code.append("<td width=\"20%\"><b>Count</b></td>");
 						code.append("<td width=\"20%\"><b>Cost</b></td>");
 						code.append("</tr>");
-						for(Entry<TypeName, Integer> countByTypename : memCost.aggregatedCountByTypename.entrySet()) {
+						for(Entry<TypeName, Integer> countByTypename : refCGNodeCost.aggregatedCountByTypename.entrySet()) {
 							code.append("<tr>");
 							TypeName typeName = countByTypename.getKey();
 							code.append("<td>" + typeName + "</td>");
@@ -484,15 +484,13 @@ public class ReportGenerator {
 
 							int typeSize;
 
-							if(memCost.aggregatedArraySizeByTypeName.containsKey(typeName)) {
-								typeSize = memCost.aggregatedArraySizeByTypeName.get(typeName);
+							if(refCGNodeCost.aggregatedArraySizeByTypeName.containsKey(typeName)) {
+								typeSize = memCost.aggregatedArraySizeByTypeName.get(typeName) * jvmModel.getSizeForQualifiedType(typeName);
 							} else {
-								typeSize = jvmModel.getSizeForQualifiedType(typeName);
+								typeSize = count * jvmModel.getSizeForQualifiedType(typeName);
 							}
 							
-							int totalCost = count*typeSize;
-							
-							code.append("<td>" + totalCost + "</td>");
+							code.append("<td>" + typeSize + "</td>");
 							code.append("</tr>");
 						}
 						code.append("</tbody>");

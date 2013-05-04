@@ -13,6 +13,8 @@ import net.sf.javailp.Operator;
 import net.sf.javailp.Result;
 import sw10.spideybc.analysis.loopanalysis.CFGLoopAnalyzer;
 import sw10.spideybc.build.AnalysisEnvironment;
+import sw10.spideybc.errors.ErrorPrinter;
+import sw10.spideybc.errors.ErrorPrinter.Type;
 import sw10.spideybc.util.Util;
 import sw10.spideybc.util.annotationextractor.extractor.AnnotationExtractor;
 import sw10.spideybc.util.annotationextractor.parser.Annotation;
@@ -206,8 +208,7 @@ public class CGNodeAnalyzer {
 						IBytecodeMethod bytecodeMethod = (IBytecodeMethod)this.node.getMethod();
 						lineNumberForLoop = bytecodeMethod.getLineNumber(bytecodeMethod.getBytecodeIndex(currentBlock.getFirstInstructionIndex()));
 						if (annotationByLineNumber == null || (!annotationByLineNumber.containsKey(lineNumberForLoop) && !annotationByLineNumber.containsKey(lineNumberForLoop - 1))) {
-							System.err.println("No bound for loop detected in " + method.getSignature());
-							System.err.println("\tExpected //@ loopbound annotation at line " + lineNumberForLoop);
+							ErrorPrinter.print(Type.AnnotationLoop, method, lineNumberForLoop);
 							boundForLoop = "0";
 						} else {
 							if (annotationByLineNumber.containsKey(lineNumberForLoop)) {

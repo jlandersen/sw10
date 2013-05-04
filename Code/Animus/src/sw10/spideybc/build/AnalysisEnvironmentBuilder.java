@@ -94,9 +94,11 @@ public class AnalysisEnvironmentBuilder {
 			{
 				if (entry.isClassFile()) {
 					applicationScope.addEntry(entry);
-					scope.addSourceFileToScope(scope.getLoader(AnalysisScope.APPLICATION),
-							originalSourceCodeFilesByClassName.get(sw10.spideybc.util.Util.getClassNameOrOuterMostClassNameIfNestedClass(entry.getClassName())), 
-							entry.getClassName() + ".java");
+					String className = entry.getClassName();
+					File file = originalSourceCodeFilesByClassName.get(sw10.spideybc.util.Util.getClassNameOrOuterMostClassNameIfNestedClass(className));
+					if(file != null) {
+						scope.addSourceFileToScope(scope.getLoader(AnalysisScope.APPLICATION), file, entry.getClassName() + ".java");
+					}
 				}
 			}	
 		}

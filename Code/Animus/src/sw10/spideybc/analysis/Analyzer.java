@@ -5,11 +5,9 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.LinkedList;
 import java.util.Map.Entry;
 
-import sw10.spideybc.build.AnalysisEnvironment;
 import sw10.spideybc.build.JVMModel;
 import sw10.spideybc.program.AnalysisSpecification;
 import sw10.spideybc.reports.ReportGenerator;
-import sw10.spideybc.util.annotationextractor.extractor.AnnotationExtractor;
 
 import com.ibm.wala.ipa.callgraph.CGNode;
 import com.ibm.wala.types.TypeName;

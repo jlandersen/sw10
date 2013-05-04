@@ -60,14 +60,15 @@ public class SimpleApplication {
 		String helloConcat = helloString + " Extra ";
 	}
 	
+	public static int variableSize = 10;
 	public static void arrayTest(String[] args) {
-		int x = 50 + 2;
-		int[] newArr = new int[x]; //@ length = 100
+		int[] newArr = new int[variableSize]; //@ length = 100
+		
+		Object obj = new Object();
 	}
 	
-	public static int variableSize = 10;
 	public static void main(String[] args) {
-		int length = 1;
+		//int length = 1;
 		arrayTest(args);
 		
 		Object obj = null;
@@ -75,6 +76,6 @@ public class SimpleApplication {
 			obj = new Object();
 		}
 		//int[] newArray = new int[10];
-		int[] newArr = new int[length]; //@ length = 1241
+		//int[] newArr = new int[length]; //@ length = 1241
 	}
 }

@@ -4,10 +4,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 import com.ibm.wala.ipa.callgraph.CGNode;
 import com.ibm.wala.types.TypeName;
+import com.ibm.wala.util.collections.Pair;
 
 public class CostResultMemory implements ICostResult {
 	public long allocationCost;
@@ -19,9 +19,11 @@ public class CostResultMemory implements ICostResult {
 	private int maxLocals;
 	
 	public Map<TypeName, Integer> aggregatedArraySizeByTypeName;
+	public Map<TypeName, Integer> arraySizeByTypeName;
 	public Map<TypeName, Integer> countByTypename;
 	public Map<TypeName, Integer> aggregatedCountByTypename;
 	public Map<Integer, TypeName> typeNameByNodeId;
+	public Map<Integer, Pair<TypeName, Integer>> arraySizeByNodeId;
 	
 	public ArrayList<CGNode> worstcaseReferencesMethods;
 	public ICostResult.ResultType resultType;
@@ -38,7 +40,9 @@ public class CostResultMemory implements ICostResult {
 		aggregatedArraySizeByTypeName = new HashMap<TypeName, Integer>();
 		countByTypename = new HashMap<TypeName, Integer>();
 		aggregatedCountByTypename = new HashMap<TypeName, Integer>();
+		arraySizeByTypeName = new HashMap<TypeName, Integer>();
 		typeNameByNodeId = new HashMap<Integer, TypeName>();
+		arraySizeByNodeId = new HashMap<Integer, Pair<TypeName, Integer>>();
 		worstcaseReferencesMethods = new ArrayList<CGNode>();
 		resultType = ResultType.TEMPORARY_BLOCK_RESULT;		
 	}
@@ -100,6 +104,7 @@ public class CostResultMemory implements ICostResult {
 		CostResultMemory clone = new CostResultMemory();
 		clone.allocationCost = allocationCost;
 		clone.typeNameByNodeId.putAll(typeNameByNodeId);
+		clone.arraySizeByNodeId.putAll(arraySizeByNodeId);
 		
 		return clone;
 	}

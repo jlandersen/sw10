@@ -1,0 +1,9 @@
+{
+	ReferenceSize: 4,
+	PrimordialTypeSizes: [
+		{"java.lang.Object": 1}
+	],
+	ApplicationTypeSizes: [
+		{"[I": 5},
+	]
+}

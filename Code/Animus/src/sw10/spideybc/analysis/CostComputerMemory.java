@@ -3,8 +3,6 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
@@ -12,6 +10,8 @@ import net.sf.javailp.Problem;
 import net.sf.javailp.Result;
 import sw10.spideybc.analysis.ICostResult.ResultType;
 import sw10.spideybc.build.JVMModel;
+import sw10.spideybc.errors.ErrorPrinter;
+import sw10.spideybc.errors.ErrorPrinter.Type;
 import sw10.spideybc.program.AnalysisSpecification;
 import sw10.spideybc.util.FileScanner;
 import sw10.spideybc.util.annotationextractor.extractor.AnnotationExtractor;
@@ -45,7 +45,6 @@ public class CostComputerMemory implements ICostComputer<CostResultMemory> {
 		this.analysisSpecification = AnalysisSpecification.getAnalysisSpecification();
 	}
 	
-
 	@Override
 	public CostResultMemory getCostForInstructionInBlock(SSAInstruction instruction, ISSABasicBlock block, CGNode node) {
 		TypeName typeName = ((SSANewInstruction) instruction).getNewSite().getDeclaredType().getName();
@@ -70,7 +69,7 @@ public class CostComputerMemory implements ICostComputer<CostResultMemory> {
 		} catch (InvalidClassFileException e1) {
 			e1.printStackTrace();
 		}
-		
+
 		AnnotationExtractor extractor = AnnotationExtractor.getAnnotationExtractor();
 		Map<Integer, Annotation> annotationsForMethod = extractor.getAnnotations(method);
 		
@@ -82,15 +81,16 @@ public class CostComputerMemory implements ICostComputer<CostResultMemory> {
 			arrayLength = tryGetArrayLength(block);
 
 			if(arrayLength == null) {
-				System.err.println(method.toString() + " allocates array without specified memory size annotation expected at line " + lineNumber);
+				ErrorPrinter.print(Type.AnnotationArray, method, lineNumber);
+				arrayLength = 0;
 			}
 		}
-				
+					
 		try {
 			int allocationCost = arrayLength * model.getSizeForQualifiedType(typeName);
 			cost.allocationCost = allocationCost;
 			cost.typeNameByNodeId.put(block.getGraphNodeId(), typeName);
-			cost.aggregatedArraySizeByTypeName.put(typeName, allocationCost);
+			cost.arraySizeByNodeId.put(block.getGraphNodeId(), Pair.make(typeName, arrayLength)); 
 			cost.resultType = ResultType.TEMPORARY_BLOCK_RESULT;
 		}
 		catch(NoSuchElementException e) {
@@ -121,9 +121,15 @@ public class CostComputerMemory implements ICostComputer<CostResultMemory> {
 		return arraySize;
 	}
 	
-	private int extractArrayLength(String instruction) {
+	private Integer extractArrayLength(String instruction) {
 		String number = instruction.substring(instruction.indexOf(',')+1, instruction.length()-1);
-		return Integer.parseInt(number);
+		Integer length = null;
+		try {
+			length = Integer.parseInt(number);
+		} catch(NumberFormatException e) {
+			
+		}
+		return length;
 	}
 	
 	private void setCostForNewObject(CostResultMemory cost, TypeName typeName, String typeNameStr, ISSABasicBlock block) {
@@ -141,7 +147,7 @@ public class CostComputerMemory implements ICostComputer<CostResultMemory> {
 		CostResultMemory results = new CostResultMemory();		
 		if (resultsContext != null) {
 			results.typeNameByNodeId.putAll(resultsContext.typeNameByNodeId);
-			results.aggregatedArraySizeByTypeName.putAll(resultsContext.aggregatedArraySizeByTypeName);
+			results.arraySizeByNodeId.putAll(resultsContext.arraySizeByNodeId);
 		}
 		results.allocationCost = lpResults.getObjective().intValue();
 		results.nodeForResult = cgNode;
@@ -193,6 +199,27 @@ public class CostComputerMemory implements ICostComputer<CostResultMemory> {
 						}
 					}
 					
+					/* Merging arraySizeByArrayTypeName maps and adds matching keys value */
+					
+					if (results.arraySizeByNodeId.containsKey(blockDstID)) {
+						Pair<TypeName, Integer> arrayDetails = results.arraySizeByNodeId.get(blockDstID);
+						
+						if (results.aggregatedArraySizeByTypeName.containsKey(arrayDetails.fst)) {
+							int size = results.aggregatedArraySizeByTypeName.get(arrayDetails.fst);
+							size += arrayDetails.snd * lpResults.getPrimalValue(var).intValue();
+							results.aggregatedArraySizeByTypeName.put(arrayDetails.fst, size);
+							size = results.arraySizeByTypeName.get(arrayDetails.fst);
+							size += arrayDetails.snd * lpResults.getPrimalValue(var).intValue();
+							results.arraySizeByTypeName.put(arrayDetails.fst, size);
+							
+						}
+						else 
+						{
+							results.aggregatedArraySizeByTypeName.put(arrayDetails.fst, arrayDetails.snd*lpResults.getPrimalValue(var).intValue());
+							results.arraySizeByTypeName.put(arrayDetails.fst, arrayDetails.snd*lpResults.getPrimalValue(var).intValue());
+						}
+					}
+					
 					/* Types allocated in the node itself are counted here */
 					if (results.typeNameByNodeId.containsKey(blockDstID)) {
 						TypeName typeName = results.typeNameByNodeId.get(blockDstID);
@@ -225,6 +252,17 @@ public class CostComputerMemory implements ICostComputer<CostResultMemory> {
 								results.aggregatedCountByTypename.put(typeAllocatedInCallee.getKey(), lpResults.getPrimalValue(var).intValue()*typeAllocatedInCallee.getValue());
 							}							
 						}
+						
+						for(Entry<TypeName, Integer> arraySizes : memRes.aggregatedArraySizeByTypeName.entrySet()) {
+							if (results.aggregatedArraySizeByTypeName.containsKey(arraySizes.getKey())) {
+								int count = results.aggregatedArraySizeByTypeName.get(arraySizes.getKey());
+								count +=  lpResults.getPrimalValue(var).intValue() * arraySizes.getValue();
+								results.aggregatedArraySizeByTypeName.put(arraySizes.getKey(), count);
+							} 
+							else {
+								results.aggregatedArraySizeByTypeName.put(arraySizes.getKey(), lpResults.getPrimalValue(var).intValue() * arraySizes.getValue());
+							}
+						}
 					}
 				}
 			}
@@ -256,15 +294,6 @@ public class CostComputerMemory implements ICostComputer<CostResultMemory> {
 	public void addCostAndContext(CostResultMemory fromResult, CostResultMemory toResult) {
 		toResult.allocationCost += fromResult.getCostScalar();
 		toResult.typeNameByNodeId.putAll(fromResult.typeNameByNodeId);
-		
-		/* Merging arrayLengthByArrayTypeName maps and adds matching keys value */
-		for(Entry<TypeName, Integer> fromEntry : fromResult.aggregatedArraySizeByTypeName.entrySet()) {
-			if(toResult.aggregatedArraySizeByTypeName.containsKey(fromEntry.getKey())) {
-				Integer size = toResult.aggregatedArraySizeByTypeName.get(fromEntry.getKey());
-				size += fromEntry.getValue();
-			} else {
-				toResult.aggregatedArraySizeByTypeName.put(fromEntry.getKey(), fromEntry.getValue());
-			}
-		}
+		toResult.arraySizeByNodeId.putAll(fromResult.arraySizeByNodeId);
 	}
 }
