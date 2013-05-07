@@ -1,0 +1,108 @@
+.node circle {
+  cursor: pointer;
+  fill: #fff;
+  stroke-width: 2.0px;
+}
+
+.node text {
+  font-size: 12px;
+}
+
+path.link {
+  fill: none;
+  stroke: #ccc;
+  stroke-width: 1.5px;
+}
+
+div.tooltip {   
+  position: absolute;           
+  text-align: center;           
+  width: auto;                  
+  height: 28px;                 
+  padding: 5px;             
+  font: 12px sans-serif;        
+  background: #000;   
+  border: 0px;
+  border-radius: 8px;           
+  pointer-events: none;
+  color: #FFFFFF;
+}
+
+#code-anchors {
+  display:none;
+}
+
+p {
+	margin: 0px;
+	padding: 0px;
+	font-weight: normal;
+  line-height: 1;
+  color: #999999;
+}
+
+#content {
+	position: relative;
+	overflow: scroll;
+	height: auto;
+}
+
+#sidemenuAllocations,
+#sidemenuJVMStack {
+	position: absolute;
+	float: left;
+	left: 0px;
+	width: 0%;
+  font-size: 16px;
+	overflow: hidden;
+	white-space: nowrap;
+}
+
+small {
+	margin: 0px;
+	padding: 0px;
+}
+
+pre {
+	display:none;
+}
+
+h3 {
+	margin:0px;
+	padding: 0px;
+}
+
+.topRight {
+	position: absolute;
+	top:0;
+	right:0;
+  width:10%;
+  overflow:hidden;
+}
+
+
+.methodsignaturebox {
+  font-size:17px;
+  font-weight: bold;
+  width:89.5%;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  display: block;
+  overflow: hidden
+}
+
+#summary,
+#callgraph {
+	display:none;
+}
+
+.desc {
+  color: #c09853;
+  padding: 8px 35px 8px 14px;
+  margin-top:10px;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
+  background-color: #fcf8e3;
+  border: 1px solid #fbeed5;
+  -webkit-border-radius: 4px;
+     -moz-border-radius: 4px;
+          border-radius: 4px;
+}
