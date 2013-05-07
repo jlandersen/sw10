@@ -197,7 +197,7 @@ public class AnimusFront {
 		ClassLoader cl = AnimusFront.class.getClassLoader();
 		URL url = cl.getResource("AnimusFront.class");
 		
-		String path = url.getPath().substring(0, url.getPath().lastIndexOf('/') + 1) + "Animus.jar";
+		String path = url.getPath().substring(0, url.getPath().lastIndexOf('/') + 1) + "SpideyBC.jar";
 		String jar = jarText.getText();
 		String model = modelText.getText();
 		String jar_includes_std_libraries = Boolean.toString(stdLibraryCheck.getSelection());
@@ -214,7 +214,7 @@ public class AnimusFront {
 			/* Save to properties file */
 			Properties prop = new Properties();
 			try {
-				prop.setProperty("animus", path);
+				prop.setProperty("spideyBC", path);
 				prop.setProperty("application", jar);
 				prop.setProperty("model", model);
 				prop.setProperty("jarIncludesSTDLibraries", jar_includes_std_libraries);
@@ -246,13 +246,13 @@ public class AnimusFront {
 			Runtime rt = Runtime.getRuntime();
 			Process p = null;
 			try {
-				String runExec = String.format("java -cp %s sw10.animus.program.Program -application %s -jvm_model %s -jar_includes_std_libraries %s -source_files_root_dir %s -output_dir %s -main_class %s -entry_points %s", 
+				String runExec = String.format("java -cp %s sw10.spideybc.program.Program -application %s -jvm_model %s -jar_includes_std_libraries %s -source_files_root_dir %s -output_dir %s -main_class %s -entry_points %s", 
 						pathh + "/libs/*", jar, model, jar_includes_std_libraries, source, output, mainClass, entrypoints);
 				
 				consoleOutputText.setText(runExec + "\r\n");
 				p = rt.exec(runExec);
 			} catch (IOException e1) {
-				e1.printStackTrace();
+				e1.printStackTrace();	
 			};
 			
 			StreamGobbler outputStream = new StreamGobbler(p.getInputStream(), consoleOutputText);
