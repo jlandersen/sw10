@@ -7,7 +7,7 @@
 <listEntry value="1"/>
 </listAttribute>
 <stringAttribute key="org.eclipse.jdt.launching.MAIN_TYPE" value="sw10.spideybc.program.Program"/>
-<stringAttribute key="org.eclipse.jdt.launching.PROGRAM_ARGUMENTS" value="${project_path}${build_files} -jvm_model ${own_project_path}/data/libcsp.json -application ${workspace_loc}/libcsp.jar -jar_includes_std_libraries true -source_files_root_dir &quot;${libcsp}&quot; -output_dir ${workspace_loc}/output -main_class system/SCJApplication -entry_points sw901e12.csp.testapplication.ClientHandler.handleAsyncEvent()V"/>
+<stringAttribute key="org.eclipse.jdt.launching.PROGRAM_ARGUMENTS" value="${project_path}${build_files} -jvm_model ${own_project_path}/data/libcsp.json -application ${workspace_loc}/libcsp.jar -jar_includes_std_libraries true -source_files_root_dir &quot;${libcsp}&quot; -output_dir ${workspace_loc}/output -main_class system/SCJApplication -entry_points sw901e12.csp.handlers.RouteHandler.handleAsyncEvent()V,sw901e12.csp.handlers.ISRHandler.handleAsyncEvent()V"/>
 <stringAttribute key="org.eclipse.jdt.launching.PROJECT_ATTR" value="SpideyBC"/>
 <stringAttribute key="org.eclipse.jdt.launching.VM_ARGUMENTS" value="-Xms40m -Xmx512m"/>
 </launchConfiguration>

@@ -1,0 +1,10 @@
+{
+	ReferenceSize: 4,
+	PrimordialTypeSizes: [
+		{"java.lang.IllegalArgumentException": 0}
+	],
+	ApplicationTypeSizes: [
+		{"org.reprap.Parameter": 24},
+		{"[C": 4}
+	]
+}

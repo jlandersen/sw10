@@ -42,6 +42,8 @@ public class CGNodeLPProblem {
 	public Result getResults() {
 		problem.setObjective(objective, OptType.MAX);
 		Solver solver = factory.get();
+		System.out.println(problem);
+		System.out.println(solver.solve(problem));
 		return solver.solve(problem);
 	}
 	

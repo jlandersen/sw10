@@ -107,7 +107,7 @@ public class ReportGenerator {
         GenerateJSIncludesForCodeFile(ctxCode, webDir);
         
         /* Pages */
-        GenerateSummary(ctxIndex);
+        GenerateSummary(ctxIndex, reportEntries);
         GenerateCallGraph(codeTemplate, ctxIndex, ctxCode);
         GenerateDetails(indexTemplate, ctxIndex, reportEntries); 
 	}
@@ -139,7 +139,7 @@ public class ReportGenerator {
 		ctxCode.put("syntaxbrushJS", webDir + "syntaxhighlighter_3.0.83/scripts/shBrushJava.js");
 	}	
 	
-	private void GenerateSummary(VelocityContext ctxIndex) {
+	private void GenerateSummary(VelocityContext ctxIndex, ArrayList<ReportEntry> reportEntries) {
 		ctxIndex.put("Mainclass", specification.getMainClass());
 		ctxIndex.put("Application", specification.getApplicationJar());
 		ctxIndex.put("JarIncludesStdLibraries", specification.getJarIncludesStdLibraries());
@@ -148,6 +148,23 @@ public class ReportGenerator {
 		ctxIndex.put("SourceFilesRootDir", specification.getSourceFilesRootDir());
 		ctxIndex.put("Analysis", specification.getTypeOfAnalysisPerformed());
 		ctxIndex.put("Methods", specification.getEntryPointSignatures().length);
+		
+		StringBuilder rows = new StringBuilder();
+		StringBuilder row = null;
+		for(ReportEntry reportEntry : reportEntries) {
+			for(Entry<CGNode, ICostResult> entry : reportEntry.getEntries().entrySet()) {
+				CostResultMemory memCost = (CostResultMemory)entry.getValue();
+				row = new StringBuilder();
+				row.append("<tr class=\"warning\">");
+				row.append("<td>" + entry.getKey().getMethod().getSignature() + "</td>");
+				row.append("<td>" + memCost.getCostScalar() + "</td>");
+				row.append("<td>" + memCost.getAccumStackCost() + "</td>");
+				row.append("</tr>");
+			}
+			rows.append(row);
+		}
+		
+		ctxIndex.put("analyzedMethodRow", rows);
 	}
 	
 	private void GenerateCallGraph(Template codeTemplate, VelocityContext ctxIndex, VelocityContext ctxCode) {

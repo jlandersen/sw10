@@ -1,0 +1,22 @@
+private CallGraph buildZeroXCFAAnalysis(AnalysisScope analysisScope, 
+										ClassHierarchy classHierarchy) {
+	AnalysisOptions analysisOptions = buildEntryPoint(analysisScope, 
+													  classHierarchy);
+
+	Util.addDefaultSelectors(analysisOptions, 
+							 classHierarchy);
+	Util.addDefaultBypassLogic(analysisOptions, 
+							   analysisScope, 
+							   Util.class.getClassLoader(), 
+							   classHierarchy);		
+	
+	AnalysisCache cache = new AnalysisCache();
+	nCFABuilder builder = new nCFABuilder(3, 
+										  classHierarchy, 
+										  analysisOptions, 
+										  cache, 
+										  null, 
+										  null);
+
+	return builder.makeCallGraph(analysisOptions);
+}

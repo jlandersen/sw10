@@ -1,0 +1,17 @@
+@Override
+public CostResultMemory getCostForInstructionInBlock(
+											SSAInstruction instruction, 
+											ISSABasicBlock block, 
+											CGNode node) {
+	TypeName typeName = ((SSANewInstruction) instruction).getNewSite().getDeclaredType().getName();
+	String typeNameStr = typeName.toString();
+	// CostResultMemory implements ICostResult
+	CostResultMemory cost = new CostResultMemory();
+	if (typeNameStr.startsWith("[")) {
+		setCostForNewArrayObject(cost, typeName, typeNameStr, block);	
+	} else {
+		setCostForNewObject(cost, typeName, typeNameStr, block);
+	}
+
+	return cost;
+}

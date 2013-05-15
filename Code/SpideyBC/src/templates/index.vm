@@ -65,6 +65,16 @@
       <!-- Content -->
       <div class="hero-unit" id="content">
         <div id="summary">
+        <table class="table table-bordered table-striped">
+        		<tbody>
+        			<tr>
+        				<td><b>Analyzed method</b></td>
+        				<td><b>Worst-case dynamic memory allocation (bytes)</b></td>
+        				<td><b>Worst-case JVM stack size (bytes)</b></td>
+        			</tr>
+        			$analyzedMethodRow
+      			</tbody>
+      		</table>
         	<table class="table table-bordered table-striped">
         		<tbody>
         			<tr>

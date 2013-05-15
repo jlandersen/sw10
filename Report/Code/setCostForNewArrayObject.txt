@@ -3,10 +3,10 @@ private void setCostForNewArrayObject(CostResultMemory cost,
 	String typeNameStr, 
 	ISSABasicBlock block) {
 
-		Integer arrayLength = tryGetArrayLength(block);
-		
 		IBytecodeMethod method = (IBytecodeMethod)block.getMethod();
 		int lineNumber = method.getLineNumber(block.getFirstInstructionIndex());
+		
+		Integer arrayLength = tryGetArrayLength(block);
 		
 		if(arrayLength == null) {
 			Map<Integer, Annotation> annotationsForMethod;
@@ -17,7 +17,8 @@ private void setCostForNewArrayObject(CostResultMemory cost,
 				arrayLength = Integer.parseInt(annotationForArray.getAnnotationValue());
 			}
 			else {
-				// Warning: allocates array without specified memory size annotation
+				/* Warning: allocates array without specified memory length annotation */
+				ErrorPrinter.printAnnotationError(AnnotationType.AnnotationArray, method, lineNumber);
 			}
 		}
 		
@@ -27,6 +28,7 @@ private void setCostForNewArrayObject(CostResultMemory cost,
 			cost.typeNameByNodeId.put(block.getGraphNodeId(), typeName);
 		}
 		catch(NoSuchElementException e) {
-			// Warning: model does not contain array type
+			/* Warning: model does not contain array type */
+			ErrorPrinter.printModelError(ModelType.ModelEntry, method, lineNumber, typeName);
 		}
 	}

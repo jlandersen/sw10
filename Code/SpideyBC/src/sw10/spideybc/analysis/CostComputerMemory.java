@@ -11,7 +11,8 @@ import net.sf.javailp.Result;
 import sw10.spideybc.analysis.ICostResult.ResultType;
 import sw10.spideybc.build.JVMModel;
 import sw10.spideybc.errors.ErrorPrinter;
-import sw10.spideybc.errors.ErrorPrinter.Type;
+import sw10.spideybc.errors.ErrorPrinter.AnnotationType;
+import sw10.spideybc.errors.ErrorPrinter.ModelType;
 import sw10.spideybc.program.AnalysisSpecification;
 import sw10.spideybc.util.FileScanner;
 import sw10.spideybc.util.annotationextractor.extractor.AnnotationExtractor;
@@ -81,7 +82,7 @@ public class CostComputerMemory implements ICostComputer<CostResultMemory> {
 			arrayLength = tryGetArrayLength(block);
 
 			if(arrayLength == null) {
-				ErrorPrinter.print(Type.AnnotationArray, method, lineNumber);
+				ErrorPrinter.printAnnotationError(AnnotationType.AnnotationArray, method, lineNumber);
 				arrayLength = 0;
 			}
 		}
@@ -94,7 +95,7 @@ public class CostComputerMemory implements ICostComputer<CostResultMemory> {
 			cost.resultType = ResultType.TEMPORARY_BLOCK_RESULT;
 		}
 		catch(NoSuchElementException e) {
-			System.err.println("model.json does not contain array type: " + typeNameStr + ", at line " + lineNumber + ", found in " + method.getDeclaringClass().getName().toString());
+			ErrorPrinter.printModelError(ModelType.ModelEntry, method, lineNumber, typeName);
 		}
 	}
 	
