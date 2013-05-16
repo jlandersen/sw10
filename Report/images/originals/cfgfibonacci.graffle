@@ -63,8 +63,8 @@
 			<integer>67</integer>
 			<key>Points</key>
 			<array>
-				<string>{410.9998779296875, 293.24998899486758}</string>
-				<string>{410.9998779296875, 251.00000000526049}</string>
+				<string>{410.9998779296875, 293.2499889948661}</string>
+				<string>{410.9998779296875, 251.00000000513404}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -120,8 +120,8 @@
 			<integer>65</integer>
 			<key>Points</key>
 			<array>
-				<string>{515.49985294210933, 241.00000422698113}</string>
-				<string>{431.49989317587108, 241.00000422698113}</string>
+				<string>{515.49985294211035, 241.00000422698113}</string>
+				<string>{431.49989317605412, 241.00000422698113}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -153,8 +153,8 @@
 			<integer>64</integer>
 			<key>Points</key>
 			<array>
-				<string>{212.50002501541161, 240.99999565154872}</string>
-				<string>{390.49989317298605, 240.99999565154872}</string>
+				<string>{212.50002501541184, 240.99999565154872}</string>
+				<string>{390.49989317306432, 240.99999565154872}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -186,8 +186,8 @@
 			<integer>63</integer>
 			<key>Points</key>
 			<array>
-				<string>{337.4692119954567, 317.21835902369861}</string>
-				<string>{360.56209205004762, 316.86070847601212}</string>
+				<string>{337.46336751670395, 317.14747279112413}</string>
+				<string>{360.55104966700674, 316.75742991068222}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -219,8 +219,8 @@
 			<integer>62</integer>
 			<key>Points</key>
 			<array>
-				<string>{162.03536433851542, 295.4999948397309}</string>
-				<string>{162.08566030361629, 263.49997669104795}</string>
+				<string>{162.00602751213245, 295.49998917923654}</string>
+				<string>{162.01459996413379, 263.50000999182089}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -498,8 +498,8 @@
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\qc
 
 \f0\fs24 \cf0 result = current + previous\
-previous = current\
-current = result}</string>
+current = previous\
+previous = result}</string>
 				<key>VerticalPad</key>
 				<integer>0</integer>
 			</dict>
@@ -516,8 +516,8 @@ current = result}</string>
 			<integer>43</integer>
 			<key>Points</key>
 			<array>
-				<string>{87.49999999591104, 317.99998491716508}</string>
-				<string>{111.49997500410875, 317.99998491716508}</string>
+				<string>{87.49999999591094, 317.99998491716508}</string>
+				<string>{111.49997500410335, 317.99998491716508}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -606,8 +606,8 @@ current = result}</string>
 			<integer>40</integer>
 			<key>Points</key>
 			<array>
-				<string>{359.49778832108893, 403.25671873891713}</string>
-				<string>{385.50136937291194, 403.16945836673943}</string>
+				<string>{359.4977883211368, 403.25671874149879}</string>
+				<string>{385.50136937297242, 403.16945837024707}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -646,7 +646,7 @@ current = result}</string>
 {\colortbl;\red255\green255\blue255;}
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\qc
 
-\f0\fs24 \cf0 int i = 2}</string>
+\f0\fs24 \cf0 int i =3}</string>
 				<key>VerticalPad</key>
 				<integer>0</integer>
 			</dict>
@@ -703,8 +703,8 @@ current = result}</string>
 {\colortbl;\red255\green255\blue255;}
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\qc
 
-\f0\fs24 \cf0 int previous = 0\
-int current = 1\
+\f0\fs24 \cf0 int current = 0\
+int previous = 1\
 int result = 0}</string>
 				<key>VerticalPad</key>
 				<integer>0</integer>
@@ -863,7 +863,7 @@ int result = 0}</string>
 	<key>MasterSheets</key>
 	<array/>
 	<key>ModificationDate</key>
-	<string>2013-04-23 09:49:06 +0000</string>
+	<string>2013-05-16 09:19:09 +0000</string>
 	<key>Modifier</key>
 	<string>Jeppe Andersen</string>
 	<key>NotesVisible</key>
@@ -890,6 +890,11 @@ int result = 0}</string>
 		<array>
 			<string>float</string>
 			<string>18</string>
+		</array>
+		<key>NSPaperName</key>
+		<array>
+			<string>string</string>
+			<string>iso-a4</string>
 		</array>
 		<key>NSPaperSize</key>
 		<array>
