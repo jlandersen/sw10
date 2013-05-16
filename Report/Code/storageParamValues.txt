@@ -1,0 +1,14 @@
+/* PEHModulePinger */
+StorageParameters storageParams = new StorageParameters(80, new long[] { 53 }, 0, 0);
+
+/* PEHModuleResponseChecker */
+StorageParameters storageParams = new StorageParameters(0, new long[] { 14 }, 0, 0);
+
+/* PEHSystemRecovery */
+StorageParameters storageParams = new StorageParameters(0, new long[] { 11 }, 0, 0);
+
+/* RouteHandler */
+StorageParameters storageParams = new StorageParameters(0, new long[] { 32 }, 0, 0);
+
+/* ISRHandler */
+StorageParameters storageParams = new StorageParameters(0, new long[] { 27 }, 0, 0);

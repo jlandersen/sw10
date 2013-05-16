@@ -1,0 +1,8 @@
+{
+	ReferenceSize: 4,
+	PrimordialTypeSizes: [
+	],
+	ApplicationTypeSizes: [
+		{"sw901e12.csp.core.PacketCore": 8}
+	]
+}
