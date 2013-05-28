@@ -1,0 +1,15 @@
+public static void main(java.lang.String[]);
+...
+  Code:
+   Stack=2, Locals=4, Args_size=1
+   0:	new	#3; //class program/simple/SimpleJavaProgram
+   3:	dup
+   4:	invokespecial	#4; //Method "<init>":()V
+   7:	astore_1
+   8:	aload_1
+   9:	bipush	16
+   11:	invokevirtual	#5; //Method SquareRoot:(I)D
+   14:	dstore_2
+   15:	return
+...
+}
