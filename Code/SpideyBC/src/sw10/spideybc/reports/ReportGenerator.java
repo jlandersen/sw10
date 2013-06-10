@@ -315,7 +315,7 @@ public class ReportGenerator {
 				/* JVMStack side menu */
 				sidemenuJVMStack.append("<li><a title=\"" + method.getSignature() + "\" id=\"methodjvm-" + guid + "\" href=\"#\"><i class=\"icon-home icon-black\"></i>" + method.getSignature() + "</a></li>\n");
 				sidemenuJVMStack.append("<ul class=\"nav nav-list\">");
-				sidemenuJVMStack.append("<li><i class=\"icon-certificate icon-black\"></i>Cost: " + memCost.getAccumStackCost() + "</li>\n");
+				sidemenuJVMStack.append("<li><i class=\"icon-certificate icon-black\"></i>Cost: " + memCost.getAccumStackCostInBytes() + " bytes</li>\n");
 				sidemenuJVMStack.append("</ul>");
 				
 				/* Allocations side menu */
@@ -323,7 +323,7 @@ public class ReportGenerator {
 				
 				/* Allocations side menu --> sub-menu  */
 				sidemenuAllocations.append("<ul class=\"nav nav-list\">");
-				sidemenuAllocations.append("<li><i class=\"icon-certificate icon-black\"></i>Cost: " + cost.getCostScalar() + "</li>\n");
+				sidemenuAllocations.append("<li><i class=\"icon-certificate icon-black\"></i>Cost: " + cost.getCostScalar() + " bytes</li>\n");
 				String href = PDF_DIR + File.separatorChar + guid + ".pdf";
 				sidemenuAllocations.append("<li><a data-fancybox-type=\"iframe\" class=\"cfgViewer\" href=\"" + href + "\"><i class=\"icon-refresh icon-black\"></i>Control-Flow Graph</a></li>\n");
 				href = guid;

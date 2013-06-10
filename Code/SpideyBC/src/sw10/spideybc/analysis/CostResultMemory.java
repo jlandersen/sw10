@@ -14,11 +14,11 @@ public class CostResultMemory implements ICostResult {
 	/* Dynamic allocation cost */
 	public long allocationCost;
 	
-	/* Stack information */
-	private int stackCost; // In bytes
-	private long accumStackCost; // In bytes
-	private int maxStackHeight; // In units
-	private int maxLocals; // In units
+	/* Stack information (in units) */
+	private int stackCost;
+	private long accumStackCost;
+	private int maxStackHeight;
+	private int maxLocals;
 	
 	/* Unit size for locals and operand stack
 	 * The stackCost must be multiplied by this constant
@@ -70,6 +70,10 @@ public class CostResultMemory implements ICostResult {
 		return accumStackCost;
 	}
 	
+	public long getAccumStackCostInBytes() {
+		return accumStackCost * stackUnitSize;
+	}
+	
 	public void setAccumStackCost(long accumStackCost) {
 		this.accumStackCost = accumStackCost;
 	}
@@ -80,7 +84,7 @@ public class CostResultMemory implements ICostResult {
 	
 	public void setMaxStackHeight(int height) {
 		this.maxStackHeight = height;
-		this.stackCost = (maxStackHeight + maxLocals) * stackUnitSize;
+		this.stackCost = maxStackHeight + maxLocals;
 	}
 	
 	public int getMaxStackHeight() {
@@ -89,7 +93,7 @@ public class CostResultMemory implements ICostResult {
 	
 	public void setMaxLocals(int number) {
 		this.maxLocals = number;
-		this.stackCost = (maxLocals + maxStackHeight) * stackUnitSize;
+		this.stackCost = maxLocals + maxStackHeight;
 	}
 	
 	public int getMaxLocals() {
