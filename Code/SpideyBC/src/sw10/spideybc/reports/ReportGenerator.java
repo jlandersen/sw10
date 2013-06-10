@@ -575,12 +575,7 @@ public class ReportGenerator {
 		File outputDir = new File(OUTPUT_DIR);
 		if(!outputDir.exists()) {
 			try {
-				outputDir.mkdir();
-				new File(RESOURCES_DIR).mkdir();
-				new File(DT_DIR).mkdir();
-				new File(PDF_DIR).mkdir();
-				new File(HTML_DIR).mkdir();
-				new File(JS_DIR).mkdir();
+				outputDir.mkdir();				
 			} catch (SecurityException e) {
 				System.err.println("Could not create output directories. " + e.getStackTrace());
 			}
@@ -596,11 +591,26 @@ public class ReportGenerator {
 				deleteFilesInDirectory(file);
 			}
 		}
+		
+		try {
+			new File(RESOURCES_DIR).mkdir();
+			new File(DT_DIR).mkdir();
+			new File(PDF_DIR).mkdir();
+			new File(HTML_DIR).mkdir();
+			new File(JS_DIR).mkdir();				
+		} catch (SecurityException e) {
+			System.err.println("Could not create output directories. " + e.getStackTrace());
+		}
+		
 	}
 	
 	private void deleteFilesInDirectory(File directory) {
-		for(File file : directory.listFiles()) {
-			file.delete();
+		try{
+			for(File file : directory.listFiles()) {
+					file.delete();
+			}			
+		} catch (NullPointerException e) {
+
 		}
 	}
 }
