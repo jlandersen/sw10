@@ -1,0 +1,21 @@
+public class Queue<T extends IDispose> {
+	...
+	protected final class Element {
+		public T value;
+		public Element next;
+	}
+
+	public synchronized void reset() {
+		Element element = null;
+		for(byte i = 0; i < count; i++) {
+			...
+			if (element.value != null) {
+				element.value.dispose();
+				element.value = null;
+			}
+			element = (element.next == null ? start : element.next);
+		}
+		...
+	}
+	...
+}

@@ -17,6 +17,7 @@ import com.ibm.wala.types.TypeName;
 
 public class JVMModel {
 	public int referenceSize;
+	public int oneUnitSize;
 	public Map<String, Integer> typeSizeByTypeName;
 	
 	public JVMModel() {
@@ -41,7 +42,7 @@ public class JVMModel {
 	public static JVMModel makeFromJson(String file) {
 		String line;
 		StringBuilder json = new StringBuilder();
-		BufferedReader reader;
+		BufferedReader reader = null;
 		
 		try {
 			File jsonFile = new File(file);
@@ -49,9 +50,18 @@ public class JVMModel {
 			while((line = reader.readLine()) != null) {
 				json.append(line);
 			}
-		} catch(NullPointerException e) {
 		} catch (FileNotFoundException e) {
-		} catch (IOException e) { 
+			System.err.println("Could not find model file, " + file + ", when trying to make JVMModel. " + e.getMessage());
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				if(reader != null)
+					reader.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 		}
 		
 		GsonBuilder gsonBuilder = new GsonBuilder();

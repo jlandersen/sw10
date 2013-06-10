@@ -10,13 +10,21 @@ import com.ibm.wala.types.TypeName;
 import com.ibm.wala.util.collections.Pair;
 
 public class CostResultMemory implements ICostResult {
+	
+	/* Dynamic allocation cost */
 	public long allocationCost;
 	
-	private int stackCost;
-	private long accumStackCost;
+	/* Stack information */
+	private int stackCost; // In bytes
+	private long accumStackCost; // In bytes
+	private int maxStackHeight; // In units
+	private int maxLocals; // In units
 	
-	private int maxStackHeight;
-	private int maxLocals;
+	/* Unit size for locals and operand stack
+	 * The stackCost must be multiplied by this constant
+	 * (On JOP 1 unit = 4 bytes)
+	 */
+	private int stackUnitSize;
 	
 	public Map<TypeName, Integer> aggregatedArraySizeByTypeName;
 	public Map<TypeName, Integer> arraySizeByTypeName;
@@ -47,6 +55,13 @@ public class CostResultMemory implements ICostResult {
 		resultType = ResultType.TEMPORARY_BLOCK_RESULT;		
 	}
 	
+	/*
+	 * Stack unit size (in bytes)
+	 */
+	public void setStackUnitSize(int stackUnitSize) {
+		this.stackUnitSize = stackUnitSize;
+	}
+	
 	public List<CGNode> getWorstCaseReferencedMethods() {
 		return worstcaseReferencesMethods;
 	}
@@ -65,7 +80,7 @@ public class CostResultMemory implements ICostResult {
 	
 	public void setMaxStackHeight(int height) {
 		this.maxStackHeight = height;
-		this.stackCost = maxStackHeight + maxLocals;
+		this.stackCost = (maxStackHeight + maxLocals) * stackUnitSize;
 	}
 	
 	public int getMaxStackHeight() {
@@ -74,7 +89,7 @@ public class CostResultMemory implements ICostResult {
 	
 	public void setMaxLocals(int number) {
 		this.maxLocals = number;
-		this.stackCost = maxLocals + maxStackHeight;
+		this.stackCost = (maxLocals + maxStackHeight) * stackUnitSize;
 	}
 	
 	public int getMaxLocals() {

@@ -1,7 +1,8 @@
 {
-	ReferenceSize: 4,
+	"ReferenceSize": 4,
+	"OneUnitSize": 4,
 	PrimordialTypeSizes: [
-		{"java.lang.IllegalArgumentException": 0}
+		{"java.lang.IllegalArgumentException": 12}
 	],
 	ApplicationTypeSizes: [
 		{"org.reprap.Parameter": 24},
