@@ -158,7 +158,7 @@ public class ReportGenerator {
 				row.append("<tr class=\"warning\">");
 				row.append("<td>" + entry.getKey().getMethod().getSignature() + "</td>");
 				row.append("<td>" + memCost.getCostScalar() + "</td>");
-				row.append("<td>" + memCost.getAccumStackCost() + "</td>");
+				row.append("<td>" + memCost.getAccumStackCostInBytes() + "</td>");
 				row.append("</tr>");
 			}
 			rows.append(row);

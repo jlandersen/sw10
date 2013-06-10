@@ -1,7 +1,7 @@
 <!DOCTYPE HTML>
 <html>
   <head>
-    <title>Auto-Generated HTML File</title>
+    <title>Auto-Generated HTML Report</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <!-- Styles -->
@@ -27,11 +27,6 @@
       <!-- Header -->
       <div class="container-narrow">
       <div class="masthead">
-        <!--<ul class="nav nav-pills pull-right">
-          <li class="active"><a href="#">Home</a></li>
-          <li><a href="#">About</a></li>
-          <li><a href="#">Contact</a></li>
-        </ul>-->
         <h3 class="muted">Analysis Report</h3>
       </div>
       <hr>

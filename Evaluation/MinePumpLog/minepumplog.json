@@ -1,0 +1,10 @@
+{
+	"ReferenceSize": 4,
+	"OneUnitSize": 4,
+	PrimordialTypeSizes: [
+		{"java.lang.Exception": 12}
+	],
+	ApplicationTypeSizes: [
+		{"scj.LogEntry": 4}
+	]
+}

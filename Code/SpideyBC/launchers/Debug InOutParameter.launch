@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<launchConfiguration type="org.eclipse.jdt.launching.localJavaApplication">
+<listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_PATHS">
+<listEntry value="/SpideyBC/src/sw10/spideybc/program/Program.java"/>
+</listAttribute>
+<listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_TYPES">
+<listEntry value="1"/>
+</listAttribute>
+<stringAttribute key="org.eclipse.jdt.launching.MAIN_TYPE" value="sw10.spideybc.program.Program"/>
+<stringAttribute key="org.eclipse.jdt.launching.PROGRAM_ARGUMENTS" value="${build_files}-jvm_model /Users/Todberg/Documents/SW10/Evaluation/InOutParameter/inoutparameter.json -application /Users/Todberg/Documents/SW10/Evaluation/InOutParameter/inoutparameter.jar -jar_includes_std_libraries true -source_files_root_dir ${in_out_parameter} -output_dir ${workspace_loc}/output -main_class InOutParameter -entry_points Handler.handleAsyncEvent()V;"/>
+<stringAttribute key="org.eclipse.jdt.launching.PROJECT_ATTR" value="SpideyBC"/>
+</launchConfiguration>
