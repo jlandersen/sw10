@@ -7,6 +7,6 @@
 <listEntry value="1"/>
 </listAttribute>
 <stringAttribute key="org.eclipse.jdt.launching.MAIN_TYPE" value="sw10.spideybc.program.Program"/>
-<stringAttribute key="org.eclipse.jdt.launching.PROGRAM_ARGUMENTS" value="${build_files}-jvm_model ${own_project_path}/data/reprap.json -application ${workspace_loc}/reprap.jar -jar_includes_std_libraries true -source_files_root_dir &quot;${rep_rap}&quot; -output_dir ${workspace_loc}/output -main_class org/reprap/Main -entry_points org.reprap.CommandParser.handleAsyncEvent()V,org.reprap.CommandController.handleAsyncEvent()V,org.reprap.HostController.handleAsyncEvent()V,org.reprap.RepRapController.handleAsyncEvent()V;"/>
+<stringAttribute key="org.eclipse.jdt.launching.PROGRAM_ARGUMENTS" value="${build_files}-jvm_model ${own_project_path}/data/reprap.json -application ${workspace_loc}/reprap.jar -jar_includes_std_libraries true -source_files_root_dir &quot;${rep_rap}&quot; -output_dir ${workspace_loc}/output -main_class org/reprap/Main -run_configuration deploy -entry_points org.reprap.CommandParser.handleAsyncEvent()V,org.reprap.CommandController.handleAsyncEvent()V,org.reprap.HostController.handleAsyncEvent()V,org.reprap.RepRapController.handleAsyncEvent()V;"/>
 <stringAttribute key="org.eclipse.jdt.launching.PROJECT_ATTR" value="SpideyBC"/>
 </launchConfiguration>

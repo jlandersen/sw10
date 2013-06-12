@@ -9,7 +9,11 @@ import java.util.Properties;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.layout.GridData;
+import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
+import org.eclipse.swt.widgets.Combo;
+import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
@@ -45,18 +49,36 @@ public class SpideyBCFront {
 		shell.setImage(SWTResourceManager.getImage(SpideyBCFront.class, "/javax/swing/plaf/metal/icons/ocean/info.png"));
 		shell.setSize(1095, 476);
 		shell.setText("SpideyBC - Static Resource Analysis of Java Bytecode");
+
+		GridLayout gridLayout = new GridLayout();
+		gridLayout.makeColumnsEqualWidth = true;
+		gridLayout.numColumns = 2;
+		gridLayout.verticalSpacing = SWT.FILL;
+		gridLayout.horizontalSpacing = SWT.FILL;
+		shell.setLayout(gridLayout);
+				
+		gridLayout = new GridLayout();
+		gridLayout.numColumns = 2;
+		GridData gridData = new GridData();
+		Composite composite = new Composite(shell, SWT.NULL);
+		composite.setLayout(gridLayout);
 		
-		Group group = new Group(shell, SWT.NONE);
-		group.setBounds(10, 10, 485, 434);
+		Label lblApplicationJar = new Label(composite, SWT.NONE);
+		lblApplicationJar.setText("Application JAR:");
+		gridData = new GridData();
+		gridData.horizontalSpan = 2;
+		lblApplicationJar.setLayoutData(gridData);
 		
-		sourceText = new Text(group, SWT.BORDER);
-		sourceText.setBounds(20, 119, 321, 19);
+		sourceText = new Text(composite, SWT.BORDER);
+		gridData = new GridData();
+		gridData.grabExcessHorizontalSpace = true;
+		gridData.horizontalAlignment = SWT.FILL;
+		sourceText.setLayoutData(gridData);
 		
-		Label lblNewLabel = new Label(group, SWT.NONE);
-		lblNewLabel.setBounds(10, 10, 177, 26);
-		lblNewLabel.setText("Application JAR:");
-		
-		Button jarButton = new Button(group, SWT.NONE);
+		Button jarButton = new Button(composite, SWT.NONE);
+		gridData = new GridData();
+		gridData.horizontalAlignment = SWT.RIGHT;
+		jarButton.setLayoutData(gridData);
 		jarButton.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
@@ -65,21 +87,32 @@ public class SpideyBCFront {
 					jarText.setText(file);
 			}
 		});
-		jarButton.setBounds(360, 26, 86, 28);
 		jarButton.setText("...");
 		
-		stdLibraryCheck = new Button(group, SWT.CHECK);
-		stdLibraryCheck.setBounds(20, 42, 214, 48);
+		stdLibraryCheck = new Button(composite, SWT.CHECK);
 		stdLibraryCheck.setText("Includes standard library");
+		gridData = new GridData();
+		gridData.horizontalSpan = 2;
+		gridData.verticalAlignment = SWT.TOP;
+		stdLibraryCheck.setLayoutData(gridData);
 		
-		Label lblSourceFilesRoot = new Label(group, SWT.NONE);
-		lblSourceFilesRoot.setBounds(10, 94, 310, 19);
+		Label lblSourceFilesRoot = new Label(composite, SWT.NONE);
+		gridData = new GridData();
+		gridData.horizontalSpan = 2;
+		lblSourceFilesRoot.setLayoutData(gridData);
 		lblSourceFilesRoot.setText("Source files root directory:");
 		
-		jarText = new Text(group, SWT.BORDER);
-		jarText.setBounds(20, 30, 321, 19);
+		jarText = new Text(composite, SWT.BORDER);
+		gridData = new GridData();
+		gridData = new GridData();
+		gridData.grabExcessHorizontalSpace = true;
+		gridData.horizontalAlignment = SWT.FILL;
+		jarText.setLayoutData(gridData);
 		
-		Button sourceButton = new Button(group, SWT.NONE);
+		Button sourceButton = new Button(composite, SWT.NONE);
+		gridData = new GridData();
+		gridData.horizontalAlignment = SWT.RIGHT;
+		sourceButton.setLayoutData(gridData);
 		sourceButton.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
@@ -89,23 +122,36 @@ public class SpideyBCFront {
 			}
 		});
 		sourceButton.setText("...");
-		sourceButton.setBounds(360, 115, 86, 28);
 		
-		Label lblMainClassspecify = new Label(group, SWT.NONE);
+		Label lblMainClassspecify = new Label(composite, SWT.NONE);
 		lblMainClassspecify.setText("Main class (specify fully qualified type):");
-		lblMainClassspecify.setBounds(10, 160, 310, 19);
+		gridData = new GridData();
+		gridData.horizontalSpan = 2;
+		lblMainClassspecify.setLayoutData(gridData);
 		
-		mainclassText = new Text(group, SWT.BORDER);
-		mainclassText.setBounds(20, 182, 321, 19);
+		mainclassText = new Text(composite, SWT.BORDER);
+		gridData = new GridData();
+		gridData.grabExcessHorizontalSpace = true;
+		gridData.horizontalAlignment = SWT.FILL;
+		gridData.horizontalSpan = 2;
+		mainclassText.setLayoutData(gridData);
 		
-		Label lblJvmModel = new Label(group, SWT.NONE);
+		Label lblJvmModel = new Label(composite, SWT.NONE);
 		lblJvmModel.setText("JVM Model:");
-		lblJvmModel.setBounds(10, 214, 310, 19);
+		gridData = new GridData();
+		gridData.horizontalSpan = 2;
+		lblJvmModel.setLayoutData(gridData);
 		
-		modelText = new Text(group, SWT.BORDER);
-		modelText.setBounds(20, 239, 321, 19);
+		modelText = new Text(composite, SWT.BORDER);
+		gridData = new GridData();
+		gridData.grabExcessHorizontalSpace = true;
+		gridData.horizontalAlignment = SWT.FILL;
+		modelText.setLayoutData(gridData);
 		
-		Button modelButton = new Button(group, SWT.NONE);
+		Button modelButton = new Button(composite, SWT.NONE);
+		gridData = new GridData();
+		gridData.horizontalAlignment = SWT.RIGHT;
+		modelButton.setLayoutData(gridData);
 		modelButton.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
@@ -115,16 +161,23 @@ public class SpideyBCFront {
 			}
 		});
 		modelButton.setText("...");
-		modelButton.setBounds(360, 235, 86, 28);
 		
-		Label lblReportOutputDirectory = new Label(group, SWT.NONE);
+		Label lblReportOutputDirectory = new Label(composite, SWT.NONE);
 		lblReportOutputDirectory.setText("Report output directory:");
-		lblReportOutputDirectory.setBounds(10, 275, 310, 19);
+		gridData = new GridData();
+		gridData.horizontalSpan = 2;
+		lblReportOutputDirectory.setLayoutData(gridData);
 		
-		outputText = new Text(group, SWT.BORDER);
-		outputText.setBounds(20, 294, 321, 19);
+		outputText = new Text(composite, SWT.BORDER);
+		gridData = new GridData();
+		gridData.horizontalAlignment = SWT.FILL;
+		gridData.grabExcessHorizontalSpace = true;
+		outputText.setLayoutData(gridData);
 		
-		Button outputButton = new Button(group, SWT.NONE);
+		Button outputButton = new Button(composite, SWT.NONE);
+		gridData = new GridData();
+		gridData.horizontalAlignment = SWT.RIGHT;
+		outputButton.setLayoutData(gridData);
 		outputButton.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
@@ -134,32 +187,45 @@ public class SpideyBCFront {
 			}
 		});
 		outputButton.setText("...");
-		outputButton.setBounds(360, 290, 86, 28);
 		
-		Label lblAnalysisEntryPoints = new Label(group, SWT.NONE);
+		Label lblAnalysisEntryPoints = new Label(composite, SWT.NONE);
 		lblAnalysisEntryPoints.setText("Analysis entry points:");
-		lblAnalysisEntryPoints.setBounds(10, 337, 461, 19);
+		gridData = new GridData();
+		gridData.horizontalSpan = 2;
+		lblAnalysisEntryPoints.setLayoutData(gridData);
 		
-		analysisEntryText = new Text(group, SWT.BORDER);
-		analysisEntryText.setBounds(20, 362, 321, 19);
+		analysisEntryText = new Text(composite, SWT.BORDER);
+		gridData = new GridData();
+		gridData.grabExcessHorizontalSpace = true;
+		gridData.horizontalAlignment = SWT.FILL;
+		gridData.horizontalSpan = 2;
+		analysisEntryText.setLayoutData(gridData);
 		
-		Button startAnalysisButton = new Button(group, SWT.NONE);
+		Button startAnalysisButton = new Button(composite, SWT.NONE);
+		gridData = new GridData();
+		gridData.horizontalAlignment = SWT.RIGHT;
+		gridData.horizontalSpan = 2;
+		startAnalysisButton.setLayoutData(gridData);
 		startAnalysisButton.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
 				startAnalysis();
 			}
 		});
-		startAnalysisButton.setBounds(337, 392, 124, 28);
 		startAnalysisButton.setText("Start analysis");
 		
-		consoleOutputText = new Text(shell, SWT.BORDER | SWT.READ_ONLY | SWT.WRAP | SWT.H_SCROLL | SWT.V_SCROLL | SWT.CANCEL | SWT.MULTI);
-		consoleOutputText.setBounds(523, 30, 562, 414);
 		
-		Label lblConsoleOutput = new Label(shell, SWT.NONE);
-		lblConsoleOutput.setBounds(523, 10, 161, 14);
+		Composite rightContainer = new Composite(shell, SWT.NULL);
+		gridLayout = new GridLayout();
+		rightContainer.setLayout(gridLayout);
+		
+		Label lblConsoleOutput = new Label(rightContainer, SWT.NONE);
 		lblConsoleOutput.setText("Console output:");
+		gridData = new GridData();
+		lblConsoleOutput.setLayoutData(gridData);
 		
+		consoleOutputText = new Text(rightContainer, SWT.BORDER | SWT.READ_ONLY | SWT.WRAP | SWT.H_SCROLL | SWT.V_SCROLL | SWT.CANCEL | SWT.MULTI);
+
 		readProperties();
 		
 		shell.open();

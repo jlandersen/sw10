@@ -12,8 +12,10 @@ import sw10.spideybc.analysis.ICostComputer;
 import sw10.spideybc.analysis.ICostResult;
 import sw10.spideybc.build.AnalysisEnvironmentBuilder;
 import sw10.spideybc.build.JVMModel;
+import sw10.spideybc.errors.ErrorPrinter;
 import sw10.spideybc.program.AnalysisSpecification.AnalysisType;
 import sw10.spideybc.util.Config;
+import sw10.spideybc.util.RunConfiguration;
 
 import com.ibm.wala.util.CancelException;
 import com.ibm.wala.util.WalaException;
@@ -46,6 +48,7 @@ public class Program {
 		String analysis = properties.getProperty(Config.COMMANDLINE_ANALYSIS);
 		String reports = properties.getProperty(Config.COMMANDLINE_REPORTS);
 		String entryPoints = properties.getProperty(Config.COMMANDLINE_ENTRYPOINTS);
+		String runConfiguration = properties.getProperty(Config.COMMANDLINE_RUNCONFIGURATION);
 				
 		if(jvmModel == null || application == null 
 				|| jarIncludesStdLibraries == null || sourceFilesRootDir == null 
@@ -109,6 +112,24 @@ public class Program {
 			
 			if(entryPoints != null)
 				specification.setEntryPointSignatures(entryPoints);
+			
+			if(runConfiguration != null) {
+				RunConfiguration config;
+				if(runConfiguration.equalsIgnoreCase("debug")) {
+					config = RunConfiguration.DEBUG;
+					specification.setRunConfiguration(config);
+				}	
+				else if(runConfiguration.equalsIgnoreCase("deploy")) {
+					config = RunConfiguration.DEPLOY;
+					specification.setRunConfiguration(config);
+				}
+				else{
+					ErrorPrinter.printError(runConfiguration + " is invalid for " + Config.COMMANDLINE_RUNCONFIGURATION);
+					System.exit(1);
+				}
+			} else {
+				specification.setRunConfiguration(RunConfiguration.DEBUG);
+			}
 		}	
 		
 		return specification;
@@ -125,8 +146,8 @@ public class Program {
 	
 	public static void printCommandLineUsage(StringBuilder nulls) {
 		
-		System.err.print("The following arguments were null: \n" + nulls);
-		System.err.print("Usage: \n" +
+		ErrorPrinter.printError("The following arguments were null: \n" + nulls);
+		ErrorPrinter.printError("Usage: \n" +
 				"Required\n" +
 				"\t-jvm_model <file>.json : the corresponding JVM model for analysis, see documentation for format\n" +
 				"\t-application <file>.jar : jar file containing the application to be analysed\n" +
@@ -135,8 +156,8 @@ public class Program {
 				"\t-entry_points <package.type> : the type containing main method\n" +
 				"Optional\n" +
 	      		"\t-analysis all|stack|allocations: type of analysis performed - defaults to all\n" +
-	      		"\t-reports true|false : specifies if full reports should be generated for the output directory\n");
-		
+	      		"\t-reports true|false : specifies if full reports should be generated for the output directory\n +" +
+	      		"\t-run_configuration debug|deploy : report specific for determining whether or not reports should be portable\n");
 		System.exit(1);
 	}
 }
