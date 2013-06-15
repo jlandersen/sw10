@@ -67,16 +67,9 @@ public class SimpleApplication {
 		Object obj = new Object();
 	}
 		
-	public static void main(String[] args) {
-		
+	public static void main(String[] args) {	
 		SimpleApplication.whileLoop();
 		SimpleApplication.forLoop();
 		SimpleApplication.doWhile();
-		//Object obj = null;
-
-		//for(int i = 0; i < 20; i++) { //@ loopbound = 20
-		//	obj = new Object();
-		//}
-		//int[] newArray = new int[10];
 	}
 }

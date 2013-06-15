@@ -1,9 +1,13 @@
 {
 	ReferenceSize: 4,
+	OneUnitSize: 4,
 	PrimordialTypeSizes: [
-		{"java.lang.Object": 1}
+		{"java.lang.Object": 1},
+		{"java.lang.Exception": 12}
 	],
 	ApplicationTypeSizes: [
-		{"[I": 5}
+		{"[I": 5},
+		{"SimpleObject": 5},
+		{"TrivialObject": 5}
 	]
 }
