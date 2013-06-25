@@ -63,19 +63,20 @@ public class AnalysisEnvironmentBuilder {
 		return environment;
 	}
 
-	private AnalysisScope buildAnalysisScope() throws IOException {	
+	private AnalysisScope buildAnalysisScope() throws IOException {
+		FileProvider fp = new FileProvider();
 		AnalysisScope scope = null;
 		if (specification.getJarIncludesStdLibraries()) {
 			scope = AnalysisScope.createJavaAnalysisScope();
 		}
 		else
-		{
-			scope = AnalysisScopeReader.makePrimordialScope(FileProvider.getFile(CallGraphTestUtil.REGRESSION_EXCLUSIONS));
+		{			
+			scope = AnalysisScopeReader.makePrimordialScope(fp.getFile(CallGraphTestUtil.REGRESSION_EXCLUSIONS));
 		}
 
 		Map<String, File> originalSourceCodeFilesByClassName = FileScanner.scan(new File(specification.getSourceFilesRootDir()));
 
-		Module fullModuleForApplication = FileProvider.getJarFileModule(specification.getApplicationJar(), AnalysisScopeReader.class.getClassLoader());
+		Module fullModuleForApplication = fp.getJarFileModule(specification.getApplicationJar(), AnalysisScopeReader.class.getClassLoader());
 		Iterator<ModuleEntry> entriesInApplication = fullModuleForApplication.getEntries();
 		ScopeModule applicationScope = new ScopeModule();
 		ScopeModule primordialScope = new ScopeModule();

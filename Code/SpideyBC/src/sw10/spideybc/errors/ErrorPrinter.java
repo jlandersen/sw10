@@ -47,4 +47,12 @@ public class ErrorPrinter {
 		msg.append("Model does not contain type '" + typeName + "' at line " + lineNumber + " in " + method.getDeclaringClass().getName().toString());
 		System.err.println(msg);
 	}
+	
+	public static void printError(String msg) {
+		System.err.println("ERROR: " + msg);
+	}
+	
+	public static void printWarning(String msg) {
+		System.out.println("WARNING: " + msg);
+	}
 }

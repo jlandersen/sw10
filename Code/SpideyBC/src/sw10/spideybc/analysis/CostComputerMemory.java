@@ -145,7 +145,7 @@ public class CostComputerMemory implements ICostComputer<CostResultMemory> {
 
 	@Override
 	public CostResultMemory getFinalResultsFromContextResultsAndLPSolutions(CostResultMemory resultsContext, Result lpResults, Problem problem, Map<String, Pair<Integer, Integer>> edgeLabelToNodesIDs, Map<Integer, ICostResult> calleeResultsAtGraphNodeIdByResult, CGNode cgNode) {
-		CostResultMemory results = new CostResultMemory();		
+		CostResultMemory results = new CostResultMemory();
 		if (resultsContext != null) {
 			results.typeNameByNodeId.putAll(resultsContext.typeNameByNodeId);
 			results.arraySizeByNodeId.putAll(resultsContext.arraySizeByNodeId);
@@ -173,9 +173,10 @@ public class CostComputerMemory implements ICostComputer<CostResultMemory> {
 		
 		/* Save node stack information */
 		if(method instanceof ShrikeBTMethod) {
-			ShrikeBTMethod shrikeMethod = (ShrikeBTMethod)method;
+			ShrikeBTMethod shrikeMethod = (ShrikeBTMethod)method;	
+			results.setStackUnitSize(model.oneUnitSize);
 			results.setMaxLocals(shrikeMethod.getMaxLocals());
-			results.setMaxStackHeight(shrikeMethod.getMaxStackHeight());		
+			results.setMaxStackHeight(shrikeMethod.getMaxStackHeight());	
 		}
 		
 		Collection<Object> allVariables = problem.getVariables();
@@ -188,6 +189,7 @@ public class CostComputerMemory implements ICostComputer<CostResultMemory> {
 						continue;
 					int blockDstID = edges.snd;
 					
+					/* Add line numbers to list if the IMehtod belongs to application scope */
 					if(cgNode.getMethod().getDeclaringClass().getClassLoader().getName().toString().equals("Application")) {
 						SSACFG.BasicBlock blockDst = cfg.getBasicBlock(blockDstID);
 						try {
@@ -201,7 +203,6 @@ public class CostComputerMemory implements ICostComputer<CostResultMemory> {
 					}
 					
 					/* Merging arraySizeByArrayTypeName maps and adds matching keys value */
-					
 					if (results.arraySizeByNodeId.containsKey(blockDstID)) {
 						Pair<TypeName, Integer> arrayDetails = results.arraySizeByNodeId.get(blockDstID);
 						

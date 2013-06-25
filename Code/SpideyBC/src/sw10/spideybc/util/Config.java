@@ -11,6 +11,5 @@ public class Config {
 	public static final String COMMANDLINE_ENTRYPOINTS = "entry_points";
 	public static final String COMMANDLINE_ANALYSIS = "analysis";
 	public static final String COMMANDLINE_REPORTS = "reports";
-
-	
+	public static final String COMMANDLINE_RUNCONFIGURATION = "run_configuration";	
 }

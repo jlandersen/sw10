@@ -1,0 +1,11 @@
+{
+	ReferenceSize: 4,
+	PrimordialTypeSizes: [
+		{"[I": 4}
+	],
+	ApplicationTypeSizes: [
+		{"objects.Small": 4},
+		{"objects.Medium": 8},
+		{"objects.Large": 16}
+	]
+}

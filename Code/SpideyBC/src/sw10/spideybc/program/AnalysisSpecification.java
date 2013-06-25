@@ -8,6 +8,7 @@ import com.ibm.wala.util.strings.StringStuff;
 
 import sw10.spideybc.build.AnalysisEnvironment;
 import sw10.spideybc.build.JVMModel;
+import sw10.spideybc.util.RunConfiguration;
 
 public class AnalysisSpecification {
 	private static AnalysisSpecification singletonObject;
@@ -23,6 +24,7 @@ public class AnalysisSpecification {
 	private boolean generateAnalysisReports;
 	private JVMModel jvmModel;
 	private String jvmModelString;
+	private RunConfiguration runConfiguration;
 	
 	private LinkedList<CGNode> entryPointCGNodes;
 	
@@ -123,6 +125,14 @@ public class AnalysisSpecification {
 		return entryPointCGNodes;
 	}
 	
+	public void setRunConfiguration(RunConfiguration runConfiguration) {
+		this.runConfiguration = runConfiguration;
+	}
+	
+	public RunConfiguration getRunConfiguration() {
+		return runConfiguration;
+	}
+		
 	public LinkedList<CGNode> setEntryPointCGNodes() {
 		AnalysisEnvironment environment = AnalysisEnvironment.getAnalysisEnvironment();
 		String[] entryPointSignatures = getEntryPointSignatures();

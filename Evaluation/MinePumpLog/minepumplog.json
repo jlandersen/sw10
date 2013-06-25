@@ -2,10 +2,9 @@
 	"ReferenceSize": 4,
 	"OneUnitSize": 4,
 	PrimordialTypeSizes: [
-		{"java.lang.IllegalArgumentException": 12}
+		{"java.lang.Exception": 12}
 	],
 	ApplicationTypeSizes: [
-		{"org.reprap.Parameter": 24},
-		{"[C": 4}
+		{"scj.LogEntry": 4}
 	]
 }

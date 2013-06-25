@@ -1,0 +1,17 @@
+{
+	"ReferenceSize": 4,
+	"OneUnitSize": 4,
+	PrimordialTypeSizes: [
+		{"java.lang.StringBuilder": 8},
+		{"[C": 4},
+		{"java.lang.StringIndexOutOfBoundsException": 12},
+		{"java.lang.String": 24},
+		{"com.jopdesign.sys.Memory": 32},
+		{"java.lang.Error" : 12}
+	],
+	ApplicationTypeSizes: [
+		{"InParam": 8},
+		{"OutParam": 4},
+		{"Worker": 8}
+	]
+}

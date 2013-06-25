@@ -10,13 +10,21 @@ import com.ibm.wala.types.TypeName;
 import com.ibm.wala.util.collections.Pair;
 
 public class CostResultMemory implements ICostResult {
+	
+	/* Dynamic allocation cost */
 	public long allocationCost;
 	
+	/* Stack information (in units) */
 	private int stackCost;
 	private long accumStackCost;
-	
 	private int maxStackHeight;
 	private int maxLocals;
+	
+	/* Unit size for locals and operand stack
+	 * The stackCost must be multiplied by this constant
+	 * (On JOP 1 unit = 4 bytes)
+	 */
+	private int stackUnitSize;
 	
 	public Map<TypeName, Integer> aggregatedArraySizeByTypeName;
 	public Map<TypeName, Integer> arraySizeByTypeName;
@@ -47,12 +55,23 @@ public class CostResultMemory implements ICostResult {
 		resultType = ResultType.TEMPORARY_BLOCK_RESULT;		
 	}
 	
+	/*
+	 * Stack unit size (in bytes)
+	 */
+	public void setStackUnitSize(int stackUnitSize) {
+		this.stackUnitSize = stackUnitSize;
+	}
+	
 	public List<CGNode> getWorstCaseReferencedMethods() {
 		return worstcaseReferencesMethods;
 	}
 	
 	public long getAccumStackCost() {
 		return accumStackCost;
+	}
+	
+	public long getAccumStackCostInBytes() {
+		return accumStackCost * stackUnitSize;
 	}
 	
 	public void setAccumStackCost(long accumStackCost) {
